@@ -1,0 +1,43 @@
+{ "compressionlevel":-1,
+ "height":12,
+ "infinite":false,
+ "layers":[
+        {
+         "data":[280, 365, 365, 365, 285, 0, 0, 313, 365, 365, 365, 281,
+            338, 9, 0, 0, 0, 0, 0, 0, 0, 9, 9, 339,
+            338, 9, 0, 0, 0, 0, 0, 9, 0, 0, 9, 339,
+            338, 0, 0, 0, 0, 9, 0, 0, 0, 0, 0, 339,
+            338, 0, 9, 9, 0, 0, 0, 0, 9, 0, 0, 339,
+            338, 0, 0, 0, 0, 161, 0, 0, 0, 0, 9, 339,
+            338, 9, 0, 0, 0, 9, 9, 0, 0, 0, 9, 339,
+            338, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 339,
+            338, 0, 0, 9, 0, 0, 0, 0, 0, 241, 0, 339,
+            338, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 339,
+            338, 9, 0, 316, 0, 0, 0, 0, 9, 9, 9, 339,
+            307, 366, 366, 366, 366, 366, 366, 366, 366, 366, 366, 308],
+         "height":12,
+         "id":1,
+         "name":"Livello tile 1",
+         "opacity":1,
+         "type":"tilelayer",
+         "visible":true,
+         "width":12,
+         "x":0,
+         "y":0
+        }],
+ "nextlayerid":2,
+ "nextobjectid":1,
+ "orientation":"orthogonal",
+ "renderorder":"right-down",
+ "tiledversion":"1.12.0",
+ "tileheight":64,
+ "tilesets":[
+        {
+         "firstgid":1,
+         "source":"tilesheet_complete.tsx"
+        }],
+ "tilewidth":64,
+ "type":"map",
+ "version":"1.10",
+ "width":12
+}
