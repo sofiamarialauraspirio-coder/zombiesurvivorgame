@@ -1,10 +1,10 @@
-package test;
+package test.java;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import org.junit.jupiter.api.Test;
 
-import view.MainMenu;
+import main.java.view.MainMenu;
 
 public class MainMenuTest {
 

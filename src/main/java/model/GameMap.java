@@ -1,11 +1,11 @@
+package model;
+
 public class GameMap {
-<<<<<<< HEAD
     private int rows = 12;
     private int cols = 12;
     private int[][] logicalMatrix;
 
-    // Costanti per distinguere cosa è calpestabile e cosa no (Criterio 3)
-    // NOTA: I numeri dipendono dal tuo file Tiled. Di solito 0 o 1 è il pavimento.
+    // Costanti per distinguere cosa è calpestabile e cosa no
     public static final int TILE_FLOOR = 1; 
     public static final int TILE_WALL = 2;
 
@@ -30,7 +30,6 @@ public class GameMap {
         return logicalMatrix[row][col];
     }
 
-    // Criterio di Accettazione 3: Distinguere walkable e ostacoli
     public boolean isWalkable(int row, int col) {
         // Se fuori dai bordi, non è calpestabile
         if (row < 0 || row >= rows || col < 0 || col >= cols) {
@@ -39,15 +38,4 @@ public class GameMap {
         // Ritorna true solo se la mattonella non è un muro
         return logicalMatrix[row][col] != TILE_WALL; 
     }
-=======
-    private int[][] logicalMatrix; // 12x12
-    private Point exitLocation;
-
-    // Costante per codificare i tipi di tile
-    public static final int FLOOR = 0;
-    public static final int WALL = 1;
-    public static final int EXIT = 2;
-
-    // ... getter, setter ...
->>>>>>> 0bee1b3f9f7571411accdd212ce661021de8cc77
 }
