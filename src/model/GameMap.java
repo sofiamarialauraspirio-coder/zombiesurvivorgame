@@ -1,4 +1,5 @@
 public class GameMap {
+<<<<<<< HEAD
     private int rows = 12;
     private int cols = 12;
     private int[][] logicalMatrix;
@@ -38,4 +39,15 @@ public class GameMap {
         // Ritorna true solo se la mattonella non è un muro
         return logicalMatrix[row][col] != TILE_WALL; 
     }
+=======
+    private int[][] logicalMatrix; // 12x12
+    private Point exitLocation;
+
+    // Costante per codificare i tipi di tile
+    public static final int FLOOR = 0;
+    public static final int WALL = 1;
+    public static final int EXIT = 2;
+
+    // ... getter, setter ...
+>>>>>>> 0bee1b3f9f7571411accdd212ce661021de8cc77
 }
