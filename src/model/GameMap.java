@@ -1,3 +1,7 @@
+package model;
+
+import java.awt.Point;
+
 public class GameMap {
     private int[][] logicalMatrix; // 12x12
     private Point exitLocation;

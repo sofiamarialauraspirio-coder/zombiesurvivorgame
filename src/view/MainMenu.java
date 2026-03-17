@@ -11,7 +11,7 @@ import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 import java.awt.BorderLayout;
-import java.awt.BasicStroke; // <-- Nuova importazione per lo spessore del bordo
+import java.awt.BasicStroke; 
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Cursor;
@@ -25,6 +25,7 @@ import java.io.File;
 import java.io.IOException;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import model.GameSession;
 
 public class MainMenu extends JFrame {
 
@@ -99,10 +100,8 @@ public class MainMenu extends JFrame {
 
             // 2. Il bordo luminoso PIÙ SPESSO
             g2.setColor(new Color(255, 255, 255, 160)); // Bianco un po' più visibile
-            g2.setStroke(new BasicStroke(3.0f)); // <-- ECCO LO SPESSORE (3 pixel)
+            g2.setStroke(new BasicStroke(3.0f)); 
             
-            // Rimpiccioliamo leggermente le coordinate del disegno del bordo
-            // altrimenti uno spessore troppo grande verrebbe tagliato fuori dai limiti del bottone
             g2.drawRoundRect(1, 1, width - 3, height - 3, cornerRadius, cornerRadius);
 
             g2.dispose(); 
@@ -133,11 +132,29 @@ public class MainMenu extends JFrame {
         JPanel pnlBottoni = new JPanel(); 
         pnlBottoni.setOpaque(false); 
 
+        // Creazione dei due bottoni principali
         JButton btnGioca = new IosGlassButton("Gioca"); 
         JButton btnEsci = new IosGlassButton("Esci");
 
+        // Azione per chiudere il gioco
         btnEsci.addActionListener(e -> System.exit(0));
 
+        // --- COLLEGAMENTO ALLA TUA SCHERMATA (NP-11) ---
+        btnGioca.addActionListener(e -> {
+            // 1. Creiamo la memoria della partita
+            GameSession session = new GameSession();
+            
+            // 2. Creiamo la tua finestra e le passiamo la memoria
+            CharacterSelectionView selectionWindow = new CharacterSelectionView(session);
+            selectionWindow.setLocationRelativeTo(null); // Centra la finestra
+            selectionWindow.setVisible(true); // Rendila visibile!
+            
+            // 3. Chiudiamo il Menu Principale
+            dispose();
+        });
+        // ----------------------------------------------
+
+        // Aggiungiamo i bottoni al pannello
         pnlBottoni.add(btnGioca);
         pnlBottoni.add(Box.createHorizontalStrut(25)); 
         pnlBottoni.add(btnEsci);
