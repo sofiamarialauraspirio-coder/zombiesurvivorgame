@@ -35,17 +35,23 @@ public class CharacterSelectionView extends JFrame {
         // Azione ZOMBIE
         btnZombie.addActionListener(e -> {
             session.setPlayer1Choice("ZOMBIE");
+            session.setPlayer2Choice("SOPRAVVISSUTO"); // <-- TUA AGGIUNTA (Assegnazione automatica)
+            
             btnZombie.setEnabled(false);
             btnSurvivor.setEnabled(false);
-            System.out.println("Hai scelto: " + session.getPlayer1Choice());
+            
+            completataSelezione(); // <-- TUA AGGIUNTA (Passaggio al gioco)
         });
 
         // Azione SOPRAVVISSUTO
         btnSurvivor.addActionListener(e -> {
             session.setPlayer1Choice("SOPRAVVISSUTO");
+            session.setPlayer2Choice("ZOMBIE"); // <-- TUA AGGIUNTA (Assegnazione automatica)
+            
             btnZombie.setEnabled(false);
             btnSurvivor.setEnabled(false);
-            System.out.println("Hai scelto: " + session.getPlayer1Choice());
+            
+            completataSelezione(); // <-- TUA AGGIUNTA (Passaggio al gioco)
         });
 
         // --- 🏗️ COSTRUZIONE FINALE ---
@@ -55,5 +61,20 @@ public class CharacterSelectionView extends JFrame {
 
         // 4. Incolliamo l'intero sfondo con i bottoni sulla finestra principale
         add(backgroundPanel, BorderLayout.CENTER);
+    }
+
+    private void completataSelezione() {
+        // Log di verifica per te nel terminale
+        System.out.println("--- SELEZIONE COMPLETATA ---");
+        System.out.println("Giocatore 1: " + session.getPlayer1Choice());
+        System.out.println("Giocatore 2: " + session.getPlayer2Choice());
+
+        // Mostriamo un messaggio di conferma al giocatore
+        JOptionPane.showMessageDialog(this, 
+            "Scelte confermate!\nGiocatore 1: " + session.getPlayer1Choice() + 
+            "\nGiocatore 2: " + session.getPlayer2Choice());
+
+        // Soddisfiamo la User Story: il menu si chiude per passare alla mappa
+        this.dispose(); 
     }
 }
