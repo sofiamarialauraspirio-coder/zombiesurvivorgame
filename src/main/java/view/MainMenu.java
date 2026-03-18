@@ -25,6 +25,7 @@ import java.io.File;
 import java.io.IOException;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import model.GameSession;
 
 public class MainMenu extends JFrame {
 
@@ -137,6 +138,13 @@ public class MainMenu extends JFrame {
         JButton btnEsci = new IosGlassButton("Esci");
 
         btnEsci.addActionListener(e -> System.exit(0));
+
+        btnGioca.addActionListener(e -> {
+            GameSession session = new GameSession();
+            CharacterSelectionView selectionWindow = new CharacterSelectionView(session);
+            selectionWindow.setVisible(true);
+            dispose(); // Chiude il menu
+        });
 
         pnlBottoni.add(btnGioca);
         pnlBottoni.add(Box.createHorizontalStrut(25)); 
