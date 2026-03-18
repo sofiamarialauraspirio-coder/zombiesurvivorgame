@@ -32,11 +32,12 @@ public class MainMenu extends JFrame {
     private class BackgroundPanel extends JPanel {
         private Image backgroundImage;
 
-        public BackgroundPanel(String fileName) {
+        public BackgroundPanel(String resourcePath) {
             try {
-                backgroundImage = ImageIO.read(new File(fileName));
-            } catch (IOException e) {
-                System.err.println("Errore nel caricamento dell'immagine: " + fileName);
+                // MAVEN STYLE: Usiamo getResource invece di new File()
+                backgroundImage = ImageIO.read(getClass().getResource(resourcePath));
+            } catch (Exception e) {
+                System.err.println("Errore nel caricamento dell'immagine: " + resourcePath);
                 e.printStackTrace();
             }
         }
@@ -118,8 +119,7 @@ public class MainMenu extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); 
         setLocationRelativeTo(null); 
 
-        String backgroundPath = "resources" + File.separator + "zombie_chase_background.png";
-        BackgroundPanel contentPane = new BackgroundPanel(backgroundPath);
+        BackgroundPanel contentPane = new BackgroundPanel("/zombie_chase_background.png");
         
         contentPane.setLayout(new BoxLayout(contentPane, BoxLayout.Y_AXIS)); 
         contentPane.setBorder(new EmptyBorder(30, 0, 30, 0)); 
