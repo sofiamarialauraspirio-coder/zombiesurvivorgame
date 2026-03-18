@@ -1,5 +1,12 @@
 package model;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import java.io.FileReader;
+import java.io.Reader;
+
+
 public class GameMap {
     private int rows = 12;
     private int cols = 12;
@@ -37,5 +44,33 @@ public class GameMap {
         }
         // Ritorna true solo se la mattonella non è un muro
         return logicalMatrix[row][col] != TILE_WALL; 
+    }
+
+    // Metodo per il Ticket NP-13: Legge il file JSON di Tiled e riempie la matrice
+    public void loadMapFromJson(String filePath) {
+        try (Reader reader = new FileReader(filePath)) {
+            Gson gson = new Gson();
+            
+            // Legge il file e va a cercare l'array "data" dentro il primo layer
+            JsonObject jsonObject = gson.fromJson(reader, JsonObject.class);
+            JsonArray layers = jsonObject.getAsJsonArray("layers");
+            JsonObject firstLayer = layers.get(0).getAsJsonObject();
+            JsonArray data = firstLayer.getAsJsonArray("data");
+
+            // Riempie la tua matrice logica usando le tue variabili 'rows' e 'cols'
+            int listIndex = 0;
+            for (int r = 0; r < rows; r++) {
+                for (int c = 0; c < cols; c++) {
+                    // Prende il numero dal JSON e lo mette nella tua matrice
+                    logicalMatrix[r][c] = data.get(listIndex).getAsInt();
+                    listIndex++;
+                }
+            }
+            System.out.println("Mappa caricata con successo dal file: " + filePath);
+
+        } catch (Exception e) {
+            System.err.println("Errore: Impossibile leggere il file JSON!");
+            e.printStackTrace();
+        }
     }
 }
