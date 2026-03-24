@@ -20,6 +20,7 @@ public class GameFrame extends JFrame {
 
         // 3. Lo aggiungiamo e sistemiamo la finestra
         this.add(mapPanel);
+        this.setResizable(false);
         this.pack();
         this.setLocationRelativeTo(null);
     }
