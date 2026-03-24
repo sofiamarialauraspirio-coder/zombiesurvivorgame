@@ -10,10 +10,20 @@ public class MainMenuTest {
     @Test
     public void testCreazioneMenu() {
         // Arrange & Act
-        MainMenu menu = new MainMenu();
+      // Arrange & Act
+        // 1. Creiamo una finta cornice per far felice il test
+        javax.swing.JFrame fintaFinestra = new javax.swing.JFrame();
+        
+        // 2. Creiamo la finta memoria del gioco
+        model.GameSession fintaSessione = new model.GameSession();
+        
+        // 3. Ora creiamo il menu passandogli ENTRAMBE le cose!
+        MainMenu menu = new MainMenu(fintaFinestra, fintaSessione);
 
         // Assert
         assertNotNull(menu, "Il menu non deve essere nullo");
-        assertEquals("Zombie Chase - Menu", menu.getTitle(), "Il titolo della finestra deve essere corretto");
+        
+        // (Ho tolto la riga che controllava il Titolo, perché ora il 
+        // titolo ce l'ha la fintaFinestra, non più il menu interno!)
     }
 }
