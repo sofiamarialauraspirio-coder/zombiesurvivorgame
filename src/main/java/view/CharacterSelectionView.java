@@ -3,78 +3,62 @@ package view;
 import javax.swing.*;
 import java.awt.*;
 import model.GameSession;
+import model.GameMap;
+import model.MapLoader;
 
-public class CharacterSelectionView extends JFrame {
+// ORA ESTENDE JPanel, NON PIÙ JFrame!
+public class CharacterSelectionView extends JPanel {
     private GameSession session;
+    private JFrame finestraPrincipale;
 
-    public CharacterSelectionView(GameSession session) {
+    public CharacterSelectionView(JFrame finestraPrincipale, GameSession session) {
+        this.finestraPrincipale = finestraPrincipale;
         this.session = session;
         
-        setTitle("Scegli il tuo Personaggio");
-        // L'ho ingrandita a 800x500 così l'immagine si vede in tutta la sua gloria!
-        setSize(800, 500); 
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setLocationRelativeTo(null); // Centra la finestra
+        setLayout(new BorderLayout()); // Importante!
 
-        // --- 🪄 LA MAGIA DELLO SFONDO ---
-        // 1. Creiamo il pannello caricando la tua immagine esatta
         BackgroundPanel backgroundPanel = new BackgroundPanel("/ZombieVSsopravvissuto.jpeg");
-        
-        // 2. Diciamo al pannello come posizionare i bottoni (centrati e un po' in basso)
         backgroundPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 150, 30)); 
 
-        // Creiamo i bottoni
         JButton btnZombie = new JButton("Zombie");
         JButton btnSurvivor = new JButton("Sopravvissuto");
 
-        // (Piccolo tocco di classe) Facciamo i bottoni un po' più grandi!
         Font fontBottoni = new Font("Segoe UI", Font.BOLD, 24);
         btnZombie.setFont(fontBottoni);
         btnSurvivor.setFont(fontBottoni);
 
-        // Azione ZOMBIE
         btnZombie.addActionListener(e -> {
             session.setPlayer1Choice("ZOMBIE");
-            session.setPlayer2Choice("SOPRAVVISSUTO"); // <-- TUA AGGIUNTA (Assegnazione automatica)
-            
-            btnZombie.setEnabled(false);
-            btnSurvivor.setEnabled(false);
-            
-            completataSelezione(); // <-- TUA AGGIUNTA (Passaggio al gioco)
+            session.setPlayer2Choice("SOPRAVVISSUTO"); 
+            completataSelezione(); 
         });
 
-        // Azione SOPRAVVISSUTO
         btnSurvivor.addActionListener(e -> {
             session.setPlayer1Choice("SOPRAVVISSUTO");
-            session.setPlayer2Choice("ZOMBIE"); // <-- TUA AGGIUNTA (Assegnazione automatica)
-            
-            btnZombie.setEnabled(false);
-            btnSurvivor.setEnabled(false);
-            
-            completataSelezione(); // <-- TUA AGGIUNTA (Passaggio al gioco)
+            session.setPlayer2Choice("ZOMBIE"); 
+            completataSelezione(); 
         });
 
-        // --- 🏗️ COSTRUZIONE FINALE ---
-        // 3. Aggiungiamo i bottoni SULLO SFONDO (non più sulla finestra vuota)
         backgroundPanel.add(btnZombie);
         backgroundPanel.add(btnSurvivor);
-
-        // 4. Incolliamo l'intero sfondo con i bottoni sulla finestra principale
         add(backgroundPanel, BorderLayout.CENTER);
     }
 
     private void completataSelezione() {
-        // Log di verifica per te nel terminale
-        System.out.println("--- SELEZIONE COMPLETATA ---");
-        System.out.println("Giocatore 1: " + session.getPlayer1Choice());
-        System.out.println("Giocatore 2: " + session.getPlayer2Choice());
-
-        // Mostriamo un messaggio di conferma al giocatore
+        // Messaggio opzionale (puoi anche toglierlo per rendere tutto fluido al 100%)
         JOptionPane.showMessageDialog(this, 
             "Scelte confermate!\nGiocatore 1: " + session.getPlayer1Choice() + 
             "\nGiocatore 2: " + session.getPlayer2Choice());
 
-        // Soddisfiamo la User Story: il menu si chiude per passare alla mappa
-        this.dispose(); 
+        // IL GRAND FINALE: CAMBIAMO LA TELA CON LA MAPPA!
+        MapLoader loader = new MapLoader();
+        // Assicurati che il percorso del file json sia giusto per il tuo progetto!
+        GameMap map = loader.loadMap("src/main/resources/mappa_livello1.json"); 
+        MapPanel mapPanel = new MapPanel(map);
+
+        finestraPrincipale.setContentPane(mapPanel);
+        finestraPrincipale.setResizable(false); // Blocchiamo le dimensioni come faceva il vecchio GameFrame
+        finestraPrincipale.pack(); // Rimpiccioliamo la finestra per abbracciare la mappa
+        finestraPrincipale.setLocationRelativeTo(null); // Ri-centriamo nello schermo
     }
 }

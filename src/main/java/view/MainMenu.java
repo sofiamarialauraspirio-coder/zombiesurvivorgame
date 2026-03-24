@@ -1,127 +1,68 @@
 package view;
 
 import javax.imageio.ImageIO;
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.SwingConstants;
+import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import java.awt.BorderLayout;
-import java.awt.BasicStroke; // <-- Nuova importazione per lo spessore del bordo
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Cursor;
-import java.awt.Font;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Image;
-import java.awt.LinearGradientPaint;
-import java.awt.RenderingHints;
-import java.io.File;
-import java.io.IOException;
+import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import model.GameSession;
 
-public class MainMenu extends JFrame {
+// ORA ESTENDE JPanel, NON PIÙ JFrame!
+public class MainMenu extends JPanel { 
 
-    // --- Pannello Speciale per lo Sfondo ---
+    private JButton btnGioca;
+    private JButton btnEsci;
+
     private class BackgroundPanel extends JPanel {
         private Image backgroundImage;
-
         public BackgroundPanel(String resourcePath) {
-            try {
-                // MAVEN STYLE: Usiamo getResource invece di new File()
-                backgroundImage = ImageIO.read(getClass().getResource(resourcePath));
-            } catch (Exception e) {
-                System.err.println("Errore nel caricamento dell'immagine: " + resourcePath);
-                e.printStackTrace();
-            }
+            try { backgroundImage = ImageIO.read(getClass().getResource(resourcePath)); } 
+            catch (Exception e) { e.printStackTrace(); }
         }
-
         @Override
         protected void paintComponent(Graphics g) {
             super.paintComponent(g); 
-            if (backgroundImage != null) {
-                g.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
-            }
+            if (backgroundImage != null) g.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
         }
     }
 
-    // --- Pulsante in stile "Vetro iOS" (Glassmorphism) ---
     private class IosGlassButton extends JButton {
         private boolean hovered = false;
-
         public IosGlassButton(String text) {
             super(text);
-            
             setFont(new Font("Segoe UI", Font.BOLD, 18)); 
             setForeground(Color.WHITE); 
-            setFocusPainted(false);
-            setBorderPainted(false); 
-            setContentAreaFilled(false); 
+            setFocusPainted(false); setBorderPainted(false); setContentAreaFilled(false); 
             setCursor(new Cursor(Cursor.HAND_CURSOR));
-            
             setBorder(BorderFactory.createEmptyBorder(12, 35, 12, 35));
-
             addMouseListener(new MouseAdapter() {
                 public void mouseEntered(MouseEvent evt) { hovered = true; repaint(); }
                 public void mouseExited(MouseEvent evt) { hovered = false; repaint(); }
             });
         }
-
         @Override
         protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-            int width = getWidth();
-            int height = getHeight();
             int cornerRadius = 30; 
-
-            // 1. Il corpo di vetro
-            int topAlpha = hovered ? 70 : 30; 
-            int bottomAlpha = hovered ? 40 : 10;
-            
-            Color topColor = new Color(255, 255, 255, topAlpha);
-            Color bottomColor = new Color(255, 255, 255, bottomAlpha);
-
-            LinearGradientPaint glassGradient = new LinearGradientPaint(
-                    0, 0, width, height,
-                    new float[]{0f, 1f},
-                    new Color[]{topColor, bottomColor}
-            );
-            
-            g2.setPaint(glassGradient);
-            g2.fillRoundRect(0, 0, width, height, cornerRadius, cornerRadius);
-
-            // 2. Il bordo luminoso PIÙ SPESSO
-            g2.setColor(new Color(255, 255, 255, 160)); // Bianco un po' più visibile
-            g2.setStroke(new BasicStroke(3.0f)); // <-- ECCO LO SPESSORE (3 pixel)
-            
-            // Rimpiccioliamo leggermente le coordinate del disegno del bordo
-            // altrimenti uno spessore troppo grande verrebbe tagliato fuori dai limiti del bottone
-            g2.drawRoundRect(1, 1, width - 3, height - 3, cornerRadius, cornerRadius);
-
+            Color topColor = new Color(255, 255, 255, hovered ? 70 : 30);
+            Color bottomColor = new Color(255, 255, 255, hovered ? 40 : 10);
+            g2.setPaint(new LinearGradientPaint(0, 0, getWidth(), getHeight(), new float[]{0f, 1f}, new Color[]{topColor, bottomColor}));
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), cornerRadius, cornerRadius);
+            g2.setColor(new Color(255, 255, 255, 160)); 
+            g2.setStroke(new BasicStroke(3.0f)); 
+            g2.drawRoundRect(1, 1, getWidth() - 3, getHeight() - 3, cornerRadius, cornerRadius);
             g2.dispose(); 
-
-            // 3. Disegniamo la scritta al centro
             super.paintComponent(g);
         }
     }
 
-    public MainMenu() {
-        setTitle("Zombie Chase - Menu"); 
-        setSize(400, 300); 
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); 
-        setLocationRelativeTo(null); 
+    // Riceviamo la finestra dal Main!
+    public MainMenu(JFrame finestraPrincipale, GameSession session) {
+        setLayout(new BorderLayout()); // Importante per i JPanel
 
         BackgroundPanel contentPane = new BackgroundPanel("/zombie_chase_background.png");
-        
         contentPane.setLayout(new BoxLayout(contentPane, BoxLayout.Y_AXIS)); 
         contentPane.setBorder(new EmptyBorder(30, 0, 30, 0)); 
         contentPane.setOpaque(false); 
@@ -133,29 +74,27 @@ public class MainMenu extends JFrame {
 
         JPanel pnlBottoni = new JPanel(); 
         pnlBottoni.setOpaque(false); 
-
-        JButton btnGioca = new IosGlassButton("Gioca"); 
-        JButton btnEsci = new IosGlassButton("Esci");
+        btnGioca = new IosGlassButton("Gioca"); 
+        btnEsci = new IosGlassButton("Esci");
 
         btnEsci.addActionListener(e -> System.exit(0));
 
+        // IL TRUCCO: Togliamo il menu e mettiamo la schermata personaggi!
         btnGioca.addActionListener(e -> {
-            GameSession session = new GameSession();
-            CharacterSelectionView selectionWindow = new CharacterSelectionView(session);
-            selectionWindow.setVisible(true);
-            dispose(); // Chiude il menu
+            CharacterSelectionView selectionWindow = new CharacterSelectionView(finestraPrincipale, session);
+            finestraPrincipale.setContentPane(selectionWindow);
+            finestraPrincipale.revalidate(); // Diciamo a Java di "ricaricare"
+            finestraPrincipale.repaint();
         });
 
         pnlBottoni.add(btnGioca);
         pnlBottoni.add(Box.createHorizontalStrut(25)); 
         pnlBottoni.add(btnEsci);
-        
         pnlBottoni.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         contentPane.add(lblTitoloInterno); 
         contentPane.add(Box.createVerticalStrut(120)); 
         contentPane.add(pnlBottoni); 
-
         add(contentPane, BorderLayout.CENTER);
     }
 }
