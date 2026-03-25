@@ -71,6 +71,28 @@ public class MapPanel extends JPanel {
                 }
             }
         }
+
+        // =================================================================
+        // INIZIO NUOVO CODICE: DISEGNO DELLA CHIAVE (Placeholder Giallo)
+        // =================================================================
+        if (map.getKey() != null) {
+            // Calcoliamo la proporzione per le coordinate rimpicciolite (da 64 a 48)
+            int scaledX = (map.getKey().getX() * DEST_TILE_SIZE) / SOURCE_TILE_SIZE;
+            int scaledY = (map.getKey().getY() * DEST_TILE_SIZE) / SOURCE_TILE_SIZE;
+            
+            // Impostiamo il colore ORO/GIALLO
+            g.setColor(Color.YELLOW);
+            
+            // Disegniamo un cerchietto (16x16 pixel) centrato sulle coordinate
+            g.fillOval(scaledX - 8, scaledY - 8, 16, 16);
+            
+            // Aggiungiamo un contorno nero per farlo risaltare sul pavimento
+            g.setColor(Color.BLACK);
+            g.drawOval(scaledX - 8, scaledY - 8, 16, 16);
+        }
+        // =================================================================
+        // FINE NUOVO CODICE
+        // =================================================================
     }
 
     public BufferedImage getTileset() {

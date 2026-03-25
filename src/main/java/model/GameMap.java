@@ -11,6 +11,7 @@ public class GameMap {
     private int rows = 12;
     private int cols = 12;
     private int[][] logicalMatrix;
+    private Key key;
 
     // Costanti per distinguere cosa è calpestabile e cosa no
     public static final int TILE_FLOOR = 1; 
@@ -72,5 +73,13 @@ public class GameMap {
             System.err.println("Errore: Impossibile leggere il file JSON!");
             e.printStackTrace();
         }
+    }
+
+    public Key getKey() {
+        return key;
+    }
+
+    public void setKey(Key key) {
+        this.key = key;
     }
 }
