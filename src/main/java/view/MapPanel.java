@@ -72,24 +72,27 @@ public class MapPanel extends JPanel {
             }
         }
 
+       // =================================================================
+        // NUOVO CODICE: DISEGNO DELLA PORTA (Placeholder Marrone, 2 Blocchi)
         // =================================================================
-        // INIZIO NUOVO CODICE: DISEGNO DELLA CHIAVE (Placeholder Giallo)
-        // =================================================================
-        if (map.getKey() != null) {
-            // Calcoliamo la proporzione per le coordinate rimpicciolite (da 64 a 48)
-            int scaledX = (map.getKey().getX() * DEST_TILE_SIZE) / SOURCE_TILE_SIZE;
-            int scaledY = (map.getKey().getY() * DEST_TILE_SIZE) / SOURCE_TILE_SIZE;
+        if (map != null && map.getDoor() != null) {
+            // Calcoliamo la posizione in pixel sullo schermo usando la griglia
+            int doorScreenX = map.getDoor().getGridColLeft() * DEST_TILE_SIZE;
+            int doorScreenY = map.getDoor().getGridRow() * DEST_TILE_SIZE;
             
-            // Impostiamo il colore ORO/GIALLO
-            g.setColor(Color.YELLOW);
+            // La porta occupa 2 blocchi in larghezza!
+            int doorWidth = DEST_TILE_SIZE * 2; 
+            int doorHeight = DEST_TILE_SIZE;
+
+            // Colore marrone per la porta
+            g.setColor(new Color(139, 69, 19)); 
+            g.fillRect(doorScreenX, doorScreenY, doorWidth, doorHeight);
             
-            // Disegniamo un cerchietto (16x16 pixel) centrato sulle coordinate
-            g.fillOval(scaledX - 8, scaledY - 8, 16, 16);
-            
-            // Aggiungiamo un contorno nero per farlo risaltare sul pavimento
+            // Bordo nero per farla risaltare
             g.setColor(Color.BLACK);
-            g.drawOval(scaledX - 8, scaledY - 8, 16, 16);
+            g.drawRect(doorScreenX, doorScreenY, doorWidth, doorHeight);
         }
+        // =================================================================
         // =================================================================
         // FINE NUOVO CODICE
         // =================================================================
