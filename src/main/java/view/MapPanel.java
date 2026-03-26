@@ -75,6 +75,8 @@ public class MapPanel extends JPanel {
             }
         }
 
+       // =================================================================
+        // NUOVO CODICE: DISEGNO DELLA PORTA (Placeholder Marrone, 2 Blocchi)
         // =================================================================
         // INIZIO NUOVO CODICE: DISEGNO DELLA CHIAVE (Immagine PNG)
         // =================================================================
@@ -91,7 +93,24 @@ public class MapPanel extends JPanel {
 
             // Disegniamo l'immagine magica!
             g.drawImage(keyImage, scaledX - offset, scaledY - offset, displaySize, displaySize, null);
+        if (map != null && map.getDoor() != null) {
+            // Calcoliamo la posizione in pixel sullo schermo usando la griglia
+            int doorScreenX = map.getDoor().getGridColLeft() * DEST_TILE_SIZE;
+            int doorScreenY = map.getDoor().getGridRow() * DEST_TILE_SIZE;
+            
+            // La porta occupa 2 blocchi in larghezza!
+            int doorWidth = DEST_TILE_SIZE * 2; 
+            int doorHeight = DEST_TILE_SIZE;
+
+            // Colore marrone per la porta
+            g.setColor(new Color(139, 69, 19)); 
+            g.fillRect(doorScreenX, doorScreenY, doorWidth, doorHeight);
+            
+            // Bordo nero per farla risaltare
+            g.setColor(Color.BLACK);
+            g.drawRect(doorScreenX, doorScreenY, doorWidth, doorHeight);
         }
+        // =================================================================
         // =================================================================
         // FINE NUOVO CODICE
         // =================================================================
