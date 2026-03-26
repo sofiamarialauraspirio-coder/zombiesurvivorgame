@@ -13,6 +13,8 @@ public class GameMap {
     // I nostri oggetti speciali!
     private Key key;
     private Door door;
+    private Zombie zombie;     
+    private Survivor survivor;
 
     // Costanti per distinguere cosa è calpestabile e cosa no
     public static final int TILE_FLOOR = 1; 
@@ -105,5 +107,23 @@ public class GameMap {
 
     public void setDoor(Door door) {
         this.door = door;
+    }
+
+    // --- METODI PER I PERSONAGGI ---
+
+    public Zombie getZombie() {
+        return zombie;
+    }
+
+    public void setZombie(Zombie zombie) {
+        this.zombie = zombie;
+    }
+
+    public Survivor getSurvivor() {
+        return survivor;
+    }
+
+    public void setSurvivor(Survivor survivor) {
+        this.survivor = survivor;
     }
 }
