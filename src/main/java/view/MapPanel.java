@@ -12,6 +12,7 @@ import java.io.File;
 public class MapPanel extends JPanel {
     private GameMap map;
     private BufferedImage tileset;
+    private BufferedImage keyImage; // Variabile per l'immagine della chiave
 
     // 1. La grandezza ESATTA dei quadratini nel file PNG (NON CAMBIARE MAI, resta 64)
     private final int SOURCE_TILE_SIZE = 64;
@@ -29,9 +30,11 @@ public class MapPanel extends JPanel {
     private void caricaTileset() {
         try {
             tileset = ImageIO.read(new File("src/main/resources/tilesheet_complete.png"));
-            System.out.println("Tileset caricato con successo!");
+            // AGGIUNTA: Carichiamo anche l'immagine della chiave!
+            keyImage = ImageIO.read(new File("src/main/resources/key.png")); 
+            System.out.println("Tileset e Chiave caricati con successo!");
         } catch (Exception e) {
-            System.err.println("Errore fatale: Impossibile caricare il tileset! " + e.getMessage());
+            System.err.println("Errore fatale: Impossibile caricare le risorse! " + e.getMessage());
         }
     }
 
@@ -73,22 +76,21 @@ public class MapPanel extends JPanel {
         }
 
         // =================================================================
-        // INIZIO NUOVO CODICE: DISEGNO DELLA CHIAVE (Placeholder Giallo)
+        // INIZIO NUOVO CODICE: DISEGNO DELLA CHIAVE (Immagine PNG)
         // =================================================================
-        if (map.getKey() != null) {
+        if (map.getKey() != null && keyImage != null) {
             // Calcoliamo la proporzione per le coordinate rimpicciolite (da 64 a 48)
             int scaledX = (map.getKey().getX() * DEST_TILE_SIZE) / SOURCE_TILE_SIZE;
             int scaledY = (map.getKey().getY() * DEST_TILE_SIZE) / SOURCE_TILE_SIZE;
             
-            // Impostiamo il colore ORO/GIALLO
-            g.setColor(Color.YELLOW);
+            // Scegliamo la grandezza in pixel della chiave (32x32)
+            int displaySize = 32; 
             
-            // Disegniamo un cerchietto (16x16 pixel) centrato sulle coordinate
-            g.fillOval(scaledX - 8, scaledY - 8, 16, 16);
-            
-            // Aggiungiamo un contorno nero per farlo risaltare sul pavimento
-            g.setColor(Color.BLACK);
-            g.drawOval(scaledX - 8, scaledY - 8, 16, 16);
+            // Calcoliamo l'offset (la metà) per centrarla perfettamente sulle coordinate
+            int offset = displaySize / 2;
+
+            // Disegniamo l'immagine magica!
+            g.drawImage(keyImage, scaledX - offset, scaledY - offset, displaySize, displaySize, null);
         }
         // =================================================================
         // FINE NUOVO CODICE
