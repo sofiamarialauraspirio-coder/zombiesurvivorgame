@@ -34,7 +34,7 @@ public class MapLoader {
             System.out.println("Mappa 12x12 caricata con successo da JSON!");
 
             // =====================================================================
-            // LETTURA DEGLI OGGETTI (CHIAVE E PORTA)
+            // LETTURA DEGLI OGGETTI (CHIAVE, PORTA, ZOMBIE, SOPRAVVISSUTO)
             // =====================================================================
             for (int i = 0; i < layers.length(); i++) {
                 JSONObject layer = layers.getJSONObject(i);
@@ -74,6 +74,36 @@ public class MapLoader {
                             gameMap.setDoor(porta);
                             
                             System.out.println("🚪 Porta caricata! Occupa la riga " + gridRow + ", colonne " + gridColLeft + " e " + gridColRight);
+                        }
+
+                        // 3. LETTURA DELLO ZOMBIE
+                        if (objName.equals("Zombie")) {
+                            int pixelX = (int) obj.getDouble("x");
+                            int pixelY = (int) obj.getDouble("y");
+                            
+                            // Trasformiamo i pixel in coordinate griglia
+                            int gridX = pixelX / 64;
+                            int gridY = pixelY / 64;
+                            
+                            Zombie zombie = new Zombie(gridX, gridY);
+                            gameMap.setZombie(zombie);
+                            
+                            System.out.println("🧟‍♂️ Zombie spawnato nella griglia a X: " + gridX + ", Y: " + gridY);
+                        }
+
+                        // 4. LETTURA DEL SOPRAVVISSUTO
+                        if (objName.equals("Sopravvissuto")) {
+                            int pixelX = (int) obj.getDouble("x");
+                            int pixelY = (int) obj.getDouble("y");
+                            
+                            // Trasformiamo i pixel in coordinate griglia
+                            int gridX = pixelX / 64;
+                            int gridY = pixelY / 64;
+                            
+                            Survivor survivor = new Survivor(gridX, gridY);
+                            gameMap.setSurvivor(survivor);
+                            
+                            System.out.println("🏃‍♂️ Sopravvissuto spawnato nella griglia a X: " + gridX + ", Y: " + gridY);
                         }
                     }
                 }

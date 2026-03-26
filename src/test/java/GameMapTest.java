@@ -1,6 +1,5 @@
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import model.GameMap; 
 import model.MapLoader;
@@ -31,6 +30,6 @@ public class GameMapTest {
         int tileInAltoASinistra = map.getTile(0, 0);
         
         // Sostituisci "1" con il numero che su Tiled rappresenta il tuo muro
-        assertEquals(1, tileInAltoASinistra, "Il tile (0,0) dovrebbe essere un muro");
+        assertEquals(287, tileInAltoASinistra, "Il tile (0,0) dovrebbe essere un muro");;
     }
 }

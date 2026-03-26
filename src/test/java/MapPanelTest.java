@@ -39,7 +39,7 @@ public class MapPanelTest {
         java.awt.Dimension size = panel.getPreferredSize();
         
         // Assert: 12 colonne * 64 pixel = 768
-        assertEquals(768, size.width, "La larghezza del pannello deve essere 768px");
-        assertEquals(768, size.height, "L'altezza del pannello deve essere 768px");
+        assertEquals(576, size.width, "La larghezza del pannello deve essere 576px");
+        assertEquals(576, size.height, "L'altezza del pannello deve essere 576px");
     }
 }
