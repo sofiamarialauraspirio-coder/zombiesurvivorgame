@@ -8,11 +8,22 @@ import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 import java.io.File;
+import java.awt.Point;
+import java.util.List;
+import java.util.ArrayList;
 
 public class MapPanel extends JPanel {
     private GameMap map;
     private BufferedImage tileset;
     private BufferedImage keyImage; // Variabile per l'immagine della chiave
+    // Variabile per salvare le mosse valide calcolate (caselle verdi/gialle)
+    private List<Point> validMoves = new ArrayList<>();
+
+    // Metodo per dire al pannello: "Ehi, queste sono le caselle da illuminare!"
+    public void setValidMoves(List<Point> moves) {
+        this.validMoves = moves;
+        repaint(); // Questo comando costringe Java a ridisegnare la mappa istantaneamente!
+    }
     
     // VARIABILI PER I PERSONAGGI AGGIUNTE
     private BufferedImage zombieImage;
@@ -86,7 +97,30 @@ public class MapPanel extends JPanel {
         }
 
         // =================================================================
-        // DISEGNO DEGLI OGGETTI (Chiave e Porta)
+        // DISEGNO DELL'EVIDENZIATORE GIALLO PER LE MOSSE VALIDE
+        // =================================================================
+        if (validMoves != null && !validMoves.isEmpty()) {
+            // Creiamo un GIALLO con Trasparenza per farlo risaltare sul prato verde!
+            Color gialloTrasparente = new Color(255, 255, 0, 150);
+            Color bordoGiallo = Color.YELLOW;
+
+            for (Point p : validMoves) {
+                int drawX = p.x * DEST_TILE_SIZE;
+                int drawY = p.y * DEST_TILE_SIZE;
+                
+                // Coloriamo l'interno della casella
+                g.setColor(gialloTrasparente);
+                g.fillRect(drawX, drawY, DEST_TILE_SIZE, DEST_TILE_SIZE);
+                
+                // Disegniamo un bordino sottile per renderlo più stiloso
+                g.setColor(bordoGiallo);
+                g.drawRect(drawX, drawY, DEST_TILE_SIZE, DEST_TILE_SIZE);
+            }
+        }
+
+        // =================================================================
+        // DISEGNO DEGLI OGGETTI E DEI PERSONAGGI
+        // (Spostati SOTTO le caselle gialle così non vengono coperti!)
         // =================================================================
         if (map.getKey() != null && keyImage != null) {
             int scaledX = (map.getKey().getX() * DEST_TILE_SIZE) / SOURCE_TILE_SIZE;
@@ -109,9 +143,6 @@ public class MapPanel extends JPanel {
             g.drawRect(doorScreenX, doorScreenY, doorWidth, doorHeight);
         }
 
-        // =================================================================
-        // DISEGNO DELLO ZOMBIE E DEL SOPRAVVISSUTO
-        // =================================================================
         if (map.getZombie() != null && zombieImage != null) {
             int dx = map.getZombie().getX() * DEST_TILE_SIZE;
             int dy = map.getZombie().getY() * DEST_TILE_SIZE;
@@ -128,4 +159,9 @@ public class MapPanel extends JPanel {
     public BufferedImage getTileset() {
         return tileset;
     }
+
+    public void evidenziaMossePersonaggio(int x, int y) {
+    java.util.List<java.awt.Point> mosse = map.getValidMoves(x, y, 1);
+    setValidMoves(mosse);
+}
 }

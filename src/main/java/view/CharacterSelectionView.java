@@ -1,8 +1,6 @@
 package view;
 
 import javax.swing.*;
-
-
 import java.awt.*;
 import model.GameSession;
 import model.GameMap;
@@ -11,7 +9,6 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import javax.swing.border.EmptyBorder;
 
-// ORA ESTENDE JPanel, NON PIÙ JFrame!
 public class CharacterSelectionView extends JPanel {
     private GameSession session;
     private JFrame finestraPrincipale;
@@ -20,8 +17,9 @@ public class CharacterSelectionView extends JPanel {
         this.finestraPrincipale = finestraPrincipale;
         this.session = session;
         
-        setLayout(new BorderLayout()); // Importante!
+        setLayout(new BorderLayout()); 
 
+        // Pannello di sfondo
         BackgroundPanel backgroundPanel = new BackgroundPanel("/ZombieVSsopravvissuto.jpeg");
         backgroundPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 150, 30)); 
 
@@ -50,7 +48,7 @@ public class CharacterSelectionView extends JPanel {
     }
 
     private void completataSelezione() {
-        // --- INIZIO POPUP PERSONALIZZATO ---
+        // --- POPUP DI CONFERMA ---
         Window parentWindow = SwingUtilities.getWindowAncestor(this);
         JDialog dialog = new JDialog((Frame) parentWindow, true); 
         dialog.setUndecorated(true); 
@@ -69,7 +67,8 @@ public class CharacterSelectionView extends JPanel {
                 g2.dispose();
                 super.paintComponent(g);
             }
-        };
+        }; 
+        
         glassPanel.setOpaque(false);
         glassPanel.setBorder(new EmptyBorder(30, 50, 30, 50)); 
 
@@ -94,20 +93,25 @@ public class CharacterSelectionView extends JPanel {
         dialog.pack(); 
         dialog.setLocationRelativeTo(parentWindow); 
         dialog.setVisible(true); 
-        // --- FINE POPUP PERSONALIZZATO ---
 
-        // IL GRAND FINALE: CAMBIAMO LA TELA CON LA MAPPA!
+        // --- CARICAMENTO MAPPA ---
         MapLoader loader = new MapLoader();
-        // Assicurati che il percorso del file json sia giusto per il tuo progetto!
         GameMap map = loader.loadMap("src/main/resources/mappa_livello1.json"); 
         MapPanel mapPanel = new MapPanel(map);
 
+        // TEST: Mostra le mosse dello Zombie (o Survivor)
+        //if (map.getZombie() != null) {
+        //    mapPanel.evidenziaMossePersonaggio(map.getZombie().getX(), map.getZombie().getY());
+        //}
+
         finestraPrincipale.setContentPane(mapPanel);
-        finestraPrincipale.setResizable(false); // Blocchiamo le dimensioni come faceva il vecchio GameFrame
-        finestraPrincipale.pack(); // Rimpiccioliamo la finestra per abbracciare la mappa
-        finestraPrincipale.setLocationRelativeTo(null); // Ri-centriamo nello schermo
+        finestraPrincipale.revalidate();
+        finestraPrincipale.repaint();
+        finestraPrincipale.pack();
+        finestraPrincipale.setLocationRelativeTo(null);
     }
 
+    // --- CLASSE INTERNA PER I BOTTONI ---
     private class IosGlassButton extends JButton {
         private boolean hovered = false;
 
@@ -131,28 +135,39 @@ public class CharacterSelectionView extends JPanel {
         protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-            int width = getWidth();
-            int height = getHeight();
             int cornerRadius = 30; 
-
             int alpha = hovered ? 70 : 30; 
             Color topColor = new Color(255, 255, 255, alpha); 
             Color bottomColor = new Color(255, 255, 255, alpha / 2); 
-            
             LinearGradientPaint glassGradient = new LinearGradientPaint(
-                0, 0, width, height, new float[]{0f, 1f}, new Color[]{topColor, bottomColor}
+                0, 0, getWidth(), getHeight(), new float[]{0f, 1f}, new Color[]{topColor, bottomColor}
             );
-            
             g2.setPaint(glassGradient);
-            g2.fillRoundRect(0, 0, width, height, cornerRadius, cornerRadius);
-
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), cornerRadius, cornerRadius);
             g2.setColor(new Color(255, 255, 255, 140)); 
             g2.setStroke(new BasicStroke(2.0f)); 
-            g2.drawRoundRect(1, 1, width - 3, height - 3, cornerRadius, cornerRadius);
-
+            g2.drawRoundRect(1, 1, getWidth() - 3, getHeight() - 3, cornerRadius, cornerRadius);
             g2.dispose(); 
             super.paintComponent(g);
+        }
+    }
+
+    // --- CLASSE INTERNA PER LO SFONDO ---
+    private class BackgroundPanel extends JPanel {
+        private Image backgroundImage;
+        public BackgroundPanel(String resourcePath) {
+            try {
+                backgroundImage = new ImageIcon(getClass().getResource(resourcePath)).getImage();
+            } catch (Exception e) {
+                System.err.println("Errore caricamento sfondo: " + e.getMessage());
+            }
+        }
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            if (backgroundImage != null) {
+                g.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
+            }
         }
     }
 }

@@ -4,6 +4,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.awt.Point;
+import java.util.ArrayList;
+import java.util.List;
 
 public class GameMap {
     private int rows = 12;
@@ -16,7 +19,7 @@ public class GameMap {
     private Zombie zombie;     
     private Survivor survivor;
 
-    // Costanti per distinguere cosa è calpestabile e cosa no
+    // Costanti fondamentali per la calpestabilità
     public static final int TILE_FLOOR = 1; 
     public static final int TILE_WALL = 2;
 
@@ -41,32 +44,39 @@ public class GameMap {
         return logicalMatrix[row][col];
     }
 
+    /**
+     * LOGICA DI CALPESTABILITÀ AGGIORNATA
+     * Ora permette il movimento SOLO se la casella è un pavimento (ID 1).
+     * Questo esclude muri, bordi mappa e porte chiuse.
+     */
+    /**
+     * LOGICA DI CALPESTABILITÀ RIPRISTINATA (E CORRETTA)
+     * Blocca solo i Muri (ID 2) e le Porte Chiuse.
+    */
     public boolean isWalkable(int row, int col) {
-        // 1. Se fuori dai bordi, non è calpestabile
+        // 1. Controllo bordi logici dell'array
         if (row < 0 || row >= rows || col < 0 || col >= cols) {
             return false;
         }
         
-        // 2. Se è un muro di base, non è calpestabile
+        // 2. Controllo Muri: Blocchiamo solo se è esplicitamente un muro (TILE_WALL = 2)
+        // Questo permetterà al giallo di apparire sui bordi grigi (ID diverso da 2),
+        // ma è meglio che non vedere nulla!
         if (logicalMatrix[row][col] == TILE_WALL) {
             return false;
         }
 
-        // =========================================================
-        // 3. NUOVO CONTROLLO: LA PORTA!
-        // Se c'è una porta, ed è CHIUSA, controlliamo se stiamo sbattendo contro i suoi 2 blocchi
-        // =========================================================
+        // 3. Controllo Porta Chiusa
         if (door != null && !door.isOpen()) {
             if (row == door.getGridRow() && (col == door.getGridColLeft() || col == door.getGridColRight())) {
-                return false; // BOOM! Sbatti contro la porta chiusa!
+                return false; 
             }
         }
 
-        // Se passiamo tutti i controlli, possiamo camminare!
+        // Se è arrivato qui, consideriamo la casella calpestabile
         return true; 
     }
 
-    // Metodo aggiornato usando org.json (che hai già installato e funzionante!)
     public void loadMapFromJson(String filePath) {
         try {
             String content = new String(Files.readAllBytes(Paths.get(filePath)));
@@ -91,39 +101,42 @@ public class GameMap {
         }
     }
 
-    // --- METODI PER LA CHIAVE E LA PORTA ---
+    // --- GETTERS E SETTERS ---
 
-    public Key getKey() {
-        return key;
-    }
+    public Key getKey() { return key; }
+    public void setKey(Key key) { this.key = key; }
 
-    public void setKey(Key key) {
-        this.key = key;
-    }
+    public Door getDoor() { return door; }
+    public void setDoor(Door door) { this.door = door; }
 
-    public Door getDoor() {
-        return door;
-    }
+    public Zombie getZombie() { return zombie; }
+    public void setZombie(Zombie zombie) { this.zombie = zombie; }
 
-    public void setDoor(Door door) {
-        this.door = door;
-    }
+    public Survivor getSurvivor() { return survivor; }
+    public void setSurvivor(Survivor survivor) { this.survivor = survivor; }
 
-    // --- METODI PER I PERSONAGGI ---
+    // ===========================================================
+    // LOGICA DI MOVIMENTO (NP-35 / NP-19)
+    // ===========================================================
+    public List<Point> getValidMoves(int startX, int startY, int maxDistance) {
+        List<Point> validMoves = new ArrayList<>();
 
-    public Zombie getZombie() {
-        return zombie;
-    }
+        // Calcolo delle 4 direzioni (Croce)
+        // isWalkable richiede (Riga, Colonna) -> (Y, X)
+        
+        if (isWalkable(startY - 1, startX)) {
+            validMoves.add(new Point(startX, startY - 1)); // SU
+        }
+        if (isWalkable(startY + 1, startX)) {
+            validMoves.add(new Point(startX, startY + 1)); // GIÙ
+        }
+        if (isWalkable(startY, startX - 1)) {
+            validMoves.add(new Point(startX - 1, startY)); // SINISTRA
+        }
+        if (isWalkable(startY, startX + 1)) {
+            validMoves.add(new Point(startX + 1, startY)); // DESTRA
+        }
 
-    public void setZombie(Zombie zombie) {
-        this.zombie = zombie;
-    }
-
-    public Survivor getSurvivor() {
-        return survivor;
-    }
-
-    public void setSurvivor(Survivor survivor) {
-        this.survivor = survivor;
+        return validMoves;
     }
 }
