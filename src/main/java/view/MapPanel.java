@@ -13,6 +13,10 @@ public class MapPanel extends JPanel {
     private GameMap map;
     private BufferedImage tileset;
     private BufferedImage keyImage; // Variabile per l'immagine della chiave
+    
+    // VARIABILI PER I PERSONAGGI AGGIUNTE
+    private BufferedImage zombieImage;
+    private BufferedImage survivorImage;
 
     // 1. La grandezza ESATTA dei quadratini nel file PNG (NON CAMBIARE MAI, resta 64)
     private final int SOURCE_TILE_SIZE = 64;
@@ -30,11 +34,16 @@ public class MapPanel extends JPanel {
     private void caricaTileset() {
         try {
             tileset = ImageIO.read(new File("src/main/resources/tilesheet_complete.png"));
-            // AGGIUNTA: Carichiamo anche l'immagine della chiave!
             keyImage = ImageIO.read(new File("src/main/resources/key.png")); 
-            System.out.println("Tileset e Chiave caricati con successo!");
+            
+            // CARICAMENTO IMMAGINI DEI PERSONAGGI
+            zombieImage = ImageIO.read(new File("src/main/resources/zombie.png"));
+            survivorImage = ImageIO.read(new File("src/main/resources/survivor.png"));
+            
+            System.out.println("Tileset, Chiave e Personaggi caricati con successo!");
         } catch (Exception e) {
-            System.err.println("Errore fatale: Impossibile caricare le risorse! " + e.getMessage());
+            System.err.println("Errore fatale: Impossibile caricare alcune risorse! " + e.getMessage());
+            System.err.println("Assicurati di aver messo zombie.png e survivor.png nella cartella resources.");
         }
     }
 
@@ -51,6 +60,7 @@ public class MapPanel extends JPanel {
         // Calcoliamo le colonne usando la dimensione ORIGINALE dell'immagine (64)
         int colsInTileset = tileset.getWidth() / SOURCE_TILE_SIZE;
 
+        // DISEGNO DELLA MAPPA DI BASE (Muri e Pavimenti)
         for (int row = 0; row < map.getRows(); row++) {
             for (int col = 0; col < map.getCols(); col++) {
                 
@@ -75,47 +85,44 @@ public class MapPanel extends JPanel {
             }
         }
 
-       // =================================================================
-        // NUOVO CODICE: DISEGNO DELLA PORTA (Placeholder Marrone, 2 Blocchi)
         // =================================================================
-        // INIZIO NUOVO CODICE: DISEGNO DELLA CHIAVE (Immagine PNG)
+        // DISEGNO DEGLI OGGETTI (Chiave e Porta)
         // =================================================================
         if (map.getKey() != null && keyImage != null) {
-            // Calcoliamo la proporzione per le coordinate rimpicciolite (da 64 a 48)
             int scaledX = (map.getKey().getX() * DEST_TILE_SIZE) / SOURCE_TILE_SIZE;
             int scaledY = (map.getKey().getY() * DEST_TILE_SIZE) / SOURCE_TILE_SIZE;
-            
-            // Scegliamo la grandezza in pixel della chiave (32x32)
             int displaySize = 32; 
-            
-            // Calcoliamo l'offset (la metà) per centrarla perfettamente sulle coordinate
             int offset = displaySize / 2;
-
-            // Disegniamo l'immagine magica!
             g.drawImage(keyImage, scaledX - offset, scaledY - offset, displaySize, displaySize, null);
         }
         
         if (map != null && map.getDoor() != null) {
-            // Calcoliamo la posizione in pixel sullo schermo usando la griglia
             int doorScreenX = map.getDoor().getGridColLeft() * DEST_TILE_SIZE;
             int doorScreenY = map.getDoor().getGridRow() * DEST_TILE_SIZE;
-            
-            // La porta occupa 2 blocchi in larghezza!
             int doorWidth = DEST_TILE_SIZE * 2; 
             int doorHeight = DEST_TILE_SIZE;
 
-            // Colore marrone per la porta
             g.setColor(new Color(139, 69, 19)); 
             g.fillRect(doorScreenX, doorScreenY, doorWidth, doorHeight);
             
-            // Bordo nero per farla risaltare
             g.setColor(Color.BLACK);
             g.drawRect(doorScreenX, doorScreenY, doorWidth, doorHeight);
         }
+
         // =================================================================
+        // DISEGNO DELLO ZOMBIE E DEL SOPRAVVISSUTO
         // =================================================================
-        // FINE NUOVO CODICE
-        // =================================================================
+        if (map.getZombie() != null && zombieImage != null) {
+            int dx = map.getZombie().getX() * DEST_TILE_SIZE;
+            int dy = map.getZombie().getY() * DEST_TILE_SIZE;
+            g.drawImage(zombieImage, dx, dy, DEST_TILE_SIZE, DEST_TILE_SIZE, null);
+        }
+
+        if (map.getSurvivor() != null && survivorImage != null) {
+            int dx = map.getSurvivor().getX() * DEST_TILE_SIZE;
+            int dy = map.getSurvivor().getY() * DEST_TILE_SIZE;
+            g.drawImage(survivorImage, dx, dy, DEST_TILE_SIZE, DEST_TILE_SIZE, null);
+        }
     }
 
     public BufferedImage getTileset() {
