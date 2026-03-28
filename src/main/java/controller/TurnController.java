@@ -1,5 +1,7 @@
 package controller;
 
+import java.awt.Point;
+import model.Entity;
 import model.GameManager;
 import model.GameMap;
 
@@ -8,7 +10,7 @@ public class TurnController {
     private GameMap gameMap;
 
     // ==========================================
-    // STATE INTEGRITY (La nuova Macchina a Stati)
+    // STATE INTEGRITY (Macchina a Stati)
     // ==========================================
     public enum GameState {
         MENU,
@@ -19,12 +21,6 @@ public class TurnController {
     }
 
     private GameState currentState;
-
-    // Variabili per il "Resolution Trigger" (Mossa + Azione)
-    private boolean p1HasMoved = false;
-    private boolean p1HasBlocked = false; // Da collegare alla logica del "Block"
-    private boolean p2HasMoved = false;
-    private boolean p2HasBlocked = false; // Da collegare alla logica del "Block"
 
     public TurnController(GameManager gameManager, GameMap gameMap) {
         this.gameManager = gameManager;
@@ -41,66 +37,67 @@ public class TurnController {
     }
 
     // ==========================================
-    // INPUT PROTECTION & RESOLUTION TRIGGER
+    // USER STORY: PIANIFICAZIONE COMPLETA (Move + Block)
     // ==========================================
-    public void confirmMove(int targetX, int targetY) {
-        // INPUT PROTECTION: Ignoriamo i click se non siamo in fase di scelta
+    public boolean setPlannedActions(Point move, Point block) {
+        // 1. Input Protection: Siamo nel turno di qualcuno?
         if (currentState != GameState.P1_CHOICE && currentState != GameState.P2_CHOICE) {
-            System.out.println("❌ Input bloccato: Non è il momento di scegliere le mosse!");
-            return;
+            System.out.println("❌ Errore: Non è la fase di pianificazione.");
+            return false; 
         }
 
-        // Controllo Muri (NP-23)
-        if (!gameMap.isWalkable(targetY, targetX)) {
-            System.out.println("❌ Mossa Rifiutata: Hai colpito un muro o il bordo mappa!");
-            return; 
+        // Identifichiamo chi sta giocando
+        Entity currentPlayer = (currentState == GameState.P1_CHOICE) ? gameManager.getSurvivor() : gameManager.getZombie();
+
+        // 2. Integrità della Scelta (Non sovrapponibili)
+        if (move.equals(block)) {
+            System.out.println("❌ Errore: Mossa e Blocco non possono coincidere.");
+            return false;
         }
 
+        // 3. Validazione Destinazione (Muro e Adiacenza)
+        // Attenzione: isWalkable usa (riga, colonna) -> (y, x)
+        if (!gameMap.isWalkable(move.y, move.x)) {
+            System.out.println("❌ Errore: Non puoi muoverti su un muro o fuori mappa.");
+            return false;
+        }
+        
+        // Calcolo adiacenza (Distanza di Manhattan)
+        int distance = Math.abs(move.x - currentPlayer.getX()) + Math.abs(move.y - currentPlayer.getY());
+        int maxDist = currentPlayer.hasDoubleMoveBonus() ? 2 : 1; // Bonus gestione NP-19
+        if (distance > maxDist || distance == 0) {
+            System.out.println("❌ Errore: Casella di destinazione troppo lontana.");
+            return false;
+        }
+
+        // 4. Validazione Blocco (Muro e Occupata)
+        if (!gameMap.isWalkable(block.y, block.x)) {
+            System.out.println("❌ Errore: Non puoi bloccare una casella già ostruita.");
+            return false;
+        }
+        // Controlliamo che non ci sia sopra un giocatore
+        if ((block.x == gameManager.getSurvivor().getX() && block.y == gameManager.getSurvivor().getY()) ||
+            (block.x == gameManager.getZombie().getX() && block.y == gameManager.getZombie().getY())) {
+            System.out.println("❌ Errore: Non puoi bloccare una casella con un giocatore sopra.");
+            return false;
+        }
+
+        // SE ARRIVIAMO QUI: TUTTO VALIDO! Memorizziamo le scelte 💾
+        currentPlayer.planMove(move.x, move.y);
+        currentPlayer.planBlock(block.x, block.y);
+
+        // 5. Conferma e Passaggio Turno
         if (currentState == GameState.P1_CHOICE) {
-            gameManager.getSurvivor().planMove(targetX, targetY);
-            p1HasMoved = true;
-            System.out.println("P1 (Sopravvissuto) ha confermato la mossa.");
-            checkP1Finished();
-
-        } else if (currentState == GameState.P2_CHOICE) {
-            gameManager.getZombie().planMove(targetX, targetY);
-            p2HasMoved = true;
-            System.out.println("P2 (Zombie) ha confermato la mossa.");
-            checkP2Finished();
-        }
-    }
-
-    // Metodo fittizio per il "Block" (da implementare quando farete la logica delle barricate/azioni)
-    public void confirmBlock() {
-        if (currentState == GameState.P1_CHOICE) {
-            p1HasBlocked = true;
-            System.out.println("P1 ha confermato il Block.");
-            checkP1Finished();
-        } else if (currentState == GameState.P2_CHOICE) {
-            p2HasBlocked = true;
-            System.out.println("P2 ha confermato il Block.");
-            checkP2Finished();
-        }
-    }
-
-    // ==========================================
-    // STRICT SEQUENTIAL FLOW
-    // ==========================================
-    private void checkP1Finished() {
-        // Passiamo a P2 solo se P1 ha fatto ENTRAMBE le cose (Move + Block)
-        // NOTA: Se per ora volete testare solo il movimento, cambia i boolean in (p1HasMoved)
-        if (p1HasMoved && p1HasBlocked) {
             currentState = GameState.P2_CHOICE;
-            System.out.println("P1 ha finito. Turno P2 (Zombie).");
-        }
-    }
-
-    private void checkP2Finished() {
-        if (p2HasMoved && p2HasBlocked) {
+            System.out.println("P1 ha confermato le azioni. Tocca a P2 (Zombie).");
+        } else {
             currentState = GameState.RESOLUTION;
-            System.out.println("Entrambi hanno scelto. Fase di RESOLUTION!");
-            executeResolution();
+            System.out.println("P2 ha confermato. Entriamo in fase di RESOLUTION!");
+            // Inneschiamo la risoluzione finale automaticamente
+            executeResolution(); 
         }
+
+        return true; 
     }
 
     // ==========================================
@@ -111,32 +108,25 @@ public class TurnController {
             return; // Action Gating di sicurezza
         }
 
-        // 1. Eseguiamo le mosse (Story 15 / NP-19)
+        // 1. Eseguiamo le mosse vere e proprie sui personaggi
         gameManager.resolveGlobalTurn();
 
-        // 2. Resettiamo le variabili per il prossimo turno
-        p1HasMoved = false; p1HasBlocked = false;
-        p2HasMoved = false; p2HasBlocked = false;
-
-        // 3. End Condition Check: Il gioco è finito?
+        // 2. End Condition Check: Il gioco è finito?
         if (checkVictoryCondition()) {
             currentState = GameState.END_GAME;
             System.out.println("🏆 PARTITA FINITA!");
         } else {
             // Se nessuno ha vinto, si ricomincia da P1
             currentState = GameState.P1_CHOICE;
-            System.out.println("Nuovo turno globale. Tocca a P1.");
+            System.out.println("Nuovo turno globale. Tocca a P1 (Sopravvissuto).");
         }
     }
 
-    // Da espandere con la vera logica di vittoria (es. P1 tocca l'uscita, P2 mangia P1)
+    // Da espandere con la vera logica di vittoria 
     private boolean checkVictoryCondition() {
         return false; // Per ora la partita continua all'infinito
     }
 
+    // GETTER
     public GameState getCurrentState() { return currentState; }
-    
-    // Per i test
-    public void setP1HasBlocked(boolean b) { this.p1HasBlocked = b; }
-    public void setP2HasBlocked(boolean b) { this.p2HasBlocked = b; }
 }
