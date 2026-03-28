@@ -1,12 +1,14 @@
 package view;
 
 import model.GameMap;
-import controller.TurnController; // Importiamo il nostro Regista
-import controller.TurnController.GameState; // Importiamo gli stati
+import controller.TurnController;
+import controller.TurnController.GameState;
 
 import javax.swing.JPanel;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
@@ -21,9 +23,6 @@ public class MapPanel extends JPanel {
     private BufferedImage keyImage; 
     private List<Point> validMoves = new ArrayList<>();
     
-    // ==========================================
-    // NP-21: Riferimento al Regista (TurnController)
-    // ==========================================
     private TurnController turnController;
 
     private BufferedImage zombieImage;
@@ -38,7 +37,6 @@ public class MapPanel extends JPanel {
         setPreferredSize(new Dimension(map.getCols() * DEST_TILE_SIZE, map.getRows() * DEST_TILE_SIZE));
     }
 
-    // NP-21: Metodo per collegare il pannello al Regista
     public void setTurnController(TurnController turnController) {
         this.turnController = turnController;
     }
@@ -49,16 +47,11 @@ public class MapPanel extends JPanel {
             keyImage = ImageIO.read(new File("src/main/resources/key.png")); 
             zombieImage = ImageIO.read(new File("src/main/resources/zombie.png"));
             survivorImage = ImageIO.read(new File("src/main/resources/survivor.png"));
-            System.out.println("Tileset, Chiave e Personaggi caricati con successo!");
         } catch (Exception e) {
             System.err.println("Errore fatale: Impossibile caricare alcune risorse! " + e.getMessage());
         }
     }
 
-    // ==========================================
-    // NP-21: VISUAL RESET
-    // Metodo per cancellare le mosse visibili dal turno precedente
-    // ==========================================
     public void clearIndicators() {
         if (validMoves != null) {
             validMoves.clear();
@@ -75,38 +68,31 @@ public class MapPanel extends JPanel {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
 
+        // 1. Sfondo Verde
         g.setColor(new Color(46, 204, 113)); 
         g.fillRect(0, 0, getWidth(), getHeight());
 
         if (map == null || tileset == null) return;
 
+        // 2. Disegno Mappa
         int colsInTileset = tileset.getWidth() / SOURCE_TILE_SIZE;
-
         for (int row = 0; row < map.getRows(); row++) {
             for (int col = 0; col < map.getCols(); col++) {
                 int tileId = map.getTile(row, col);
-                
                 if (tileId > 0) {
                     int actualId = tileId - 1;
                     int sx = (actualId % colsInTileset) * SOURCE_TILE_SIZE; 
                     int sy = (actualId / colsInTileset) * SOURCE_TILE_SIZE;
-
                     int dx = col * DEST_TILE_SIZE;
                     int dy = row * DEST_TILE_SIZE;
-
                     g.drawImage(tileset, dx, dy, dx + DEST_TILE_SIZE, dy + DEST_TILE_SIZE, 
                                          sx, sy, sx + SOURCE_TILE_SIZE, sy + SOURCE_TILE_SIZE, null);
                 }
             }
         }
 
-        // =================================================================
-        // NP-21: STATE-GATED RENDERING & PRIVACY OF DATA
-        // =================================================================
-        // Controlliamo in che stato siamo. Disegniamo le mosse SOLO se 
-        // siamo nella fase di scelta (P1_CHOICE o P2_CHOICE). 
-        // In MENU o RESOLUTION nascondiamo i segreti!
-        boolean canShowIndicators = true; // Fallback di sicurezza
+        // 3. Indicatori Mosse (Solo nelle fasi di scelta)
+        boolean canShowIndicators = true;
         if (turnController != null) {
             GameState state = turnController.getCurrentState();
             if (state == GameState.MENU || state == GameState.RESOLUTION || state == GameState.END_GAME) {
@@ -121,7 +107,6 @@ public class MapPanel extends JPanel {
             for (Point p : validMoves) {
                 int drawX = p.x * DEST_TILE_SIZE;
                 int drawY = p.y * DEST_TILE_SIZE;
-                
                 g.setColor(gialloTrasparente);
                 g.fillRect(drawX, drawY, DEST_TILE_SIZE, DEST_TILE_SIZE);
                 g.setColor(bordoGiallo);
@@ -129,7 +114,7 @@ public class MapPanel extends JPanel {
             }
         }
 
-        // --- Disegno degli oggetti (Invariato) ---
+        // 4. Oggetti e Personaggi
         if (map.getKey() != null && keyImage != null) {
             int scaledX = (map.getKey().getX() * DEST_TILE_SIZE) / SOURCE_TILE_SIZE;
             int scaledY = (map.getKey().getY() * DEST_TILE_SIZE) / SOURCE_TILE_SIZE;
@@ -141,25 +126,72 @@ public class MapPanel extends JPanel {
         if (map != null && map.getDoor() != null) {
             int doorScreenX = map.getDoor().getGridColLeft() * DEST_TILE_SIZE;
             int doorScreenY = map.getDoor().getGridRow() * DEST_TILE_SIZE;
-            int doorWidth = DEST_TILE_SIZE * 2; 
-            int doorHeight = DEST_TILE_SIZE;
-
             g.setColor(new Color(139, 69, 19)); 
-            g.fillRect(doorScreenX, doorScreenY, doorWidth, doorHeight);
+            g.fillRect(doorScreenX, doorScreenY, DEST_TILE_SIZE * 2, DEST_TILE_SIZE);
             g.setColor(Color.BLACK);
-            g.drawRect(doorScreenX, doorScreenY, doorWidth, doorHeight);
+            g.drawRect(doorScreenX, doorScreenY, DEST_TILE_SIZE * 2, DEST_TILE_SIZE);
         }
 
         if (map.getZombie() != null && zombieImage != null) {
-            int dx = map.getZombie().getX() * DEST_TILE_SIZE;
-            int dy = map.getZombie().getY() * DEST_TILE_SIZE;
-            g.drawImage(zombieImage, dx, dy, DEST_TILE_SIZE, DEST_TILE_SIZE, null);
+            g.drawImage(zombieImage, map.getZombie().getX() * DEST_TILE_SIZE, map.getZombie().getY() * DEST_TILE_SIZE, DEST_TILE_SIZE, DEST_TILE_SIZE, null);
         }
 
         if (map.getSurvivor() != null && survivorImage != null) {
-            int dx = map.getSurvivor().getX() * DEST_TILE_SIZE;
-            int dy = map.getSurvivor().getY() * DEST_TILE_SIZE;
-            g.drawImage(survivorImage, dx, dy, DEST_TILE_SIZE, DEST_TILE_SIZE, null);
+            g.drawImage(survivorImage, map.getSurvivor().getX() * DEST_TILE_SIZE, map.getSurvivor().getY() * DEST_TILE_SIZE, DEST_TILE_SIZE, DEST_TILE_SIZE, null);
+        }
+
+        // =================================================================
+        // USER STORY 31: ACTIVE TURN INDICATOR (Dynamic UI Element)
+        // =================================================================
+        if (turnController != null) {
+            GameState state = turnController.getCurrentState();
+            String statusText = "";
+            Color textColor = Color.WHITE;
+
+            // State-Driven Content & Transition Feedback
+            switch (state) {
+                case MENU:
+                    statusText = "Premi INVIO per Iniziare!";
+                    break;
+                case P1_CHOICE:
+                    statusText = "Turno P1 (Sopravvissuto)...";
+                    textColor = Color.CYAN; // Colore per distinguere il P1
+                    break;
+                case P2_CHOICE:
+                    statusText = "Turno P2 (Zombie)...";
+                    textColor = Color.RED; // Colore per distinguere il P2
+                    break;
+                case RESOLUTION:
+                    statusText = "Risoluzione Mosse...";
+                    textColor = Color.YELLOW;
+                    break;
+                case END_GAME:
+                    statusText = "🏆 PARTITA FINITA!";
+                    textColor = Color.GREEN;
+                    break;
+            }
+
+            // Impostiamo il Font (Grassetto, grandezza 20)
+            g.setFont(new Font("Arial", Font.BOLD, 20));
+            FontMetrics fm = g.getFontMetrics();
+            int textWidth = fm.stringWidth(statusText);
+            int textHeight = fm.getHeight();
+
+            // Calcoliamo la posizione per centrarlo in alto (Visibility rule)
+            int paddingX = 20;
+            int paddingY = 10;
+            int bannerWidth = textWidth + (paddingX * 2);
+            int bannerHeight = textHeight + (paddingY * 2);
+            int bannerX = (getWidth() - bannerWidth) / 2;
+            int bannerY = 15; // Distanza dal bordo superiore
+
+            // Disegniamo il rettangolo di sfondo semi-trasparente
+            g.setColor(new Color(0, 0, 0, 180)); 
+            g.fillRoundRect(bannerX, bannerY, bannerWidth, bannerHeight, 15, 15);
+
+            // Disegniamo il testo centrato nel rettangolo
+            g.setColor(textColor);
+            g.drawString(statusText, bannerX + paddingX, bannerY + textHeight + (paddingY / 2) - 2);
         }
     }
 

@@ -5,6 +5,8 @@ import java.awt.*;
 import model.GameSession;
 import model.GameMap;
 import model.MapLoader;
+import model.GameManager;          // IMPORTIAMO L'ARBITRO
+import controller.TurnController;  // IMPORTIAMO IL REGISTA
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import javax.swing.border.EmptyBorder;
@@ -94,15 +96,27 @@ public class CharacterSelectionView extends JPanel {
         dialog.setLocationRelativeTo(parentWindow); 
         dialog.setVisible(true); 
 
-        // --- CARICAMENTO MAPPA ---
+        // --- CARICAMENTO MAPPA E COLLEGAMENTO CERVELLO ---
         MapLoader loader = new MapLoader();
         GameMap map = loader.loadMap("src/main/resources/mappa_livello1.json"); 
         MapPanel mapPanel = new MapPanel(map);
 
-        // TEST: Mostra le mosse dello Zombie (o Survivor)
-        //if (map.getZombie() != null) {
-        //    mapPanel.evidenziaMossePersonaggio(map.getZombie().getX(), map.getZombie().getY());
-        //}
+        // =================================================================
+        // COLLEGHIAMO IL CERVELLO AL GIOCO! (Il Cavo Mancante 🔌)
+        // =================================================================
+        if (map.getSurvivor() != null && map.getZombie() != null) {
+            // 1. Creiamo l'Arbitro e il Regista
+            GameManager gameManager = new GameManager(map.getSurvivor(), map.getZombie());
+            TurnController turnController = new TurnController(gameManager, map);
+
+            // 2. Presentiamo lo Schermo al Regista, e il Regista allo Schermo!
+            mapPanel.setTurnController(turnController);
+            turnController.setMapPanel(mapPanel);
+            
+        } else {
+            System.err.println("Attenzione: Sopravvissuto o Zombie non trovati nella mappa!");
+        }
+        // =================================================================
 
         finestraPrincipale.setContentPane(mapPanel);
         finestraPrincipale.revalidate();

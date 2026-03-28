@@ -3,6 +3,8 @@ package view;
 import javax.swing.JFrame;
 import model.GameMap;
 import model.MapLoader;
+import model.GameManager;          // IMPORTIAMO L'ARBITRO
+import controller.TurnController;  // IMPORTIAMO IL REGISTA
 
 public class GameFrame extends JFrame {
 
@@ -15,30 +17,28 @@ public class GameFrame extends JFrame {
         MapLoader loader = new MapLoader();
         GameMap map = loader.loadMap("src/main/resources/mappa_livello1.json");
 
-        // 2. Creiamo il pannello della mappa
+        // 2. Creiamo lo Schermo (MapPanel)
         MapPanel mapPanel = new MapPanel(map);
 
         // =================================================================
-        // TEST VISIVO: Accendiamo i quadrati gialli attorno al Sopravvissuto!
-        // (ORA E' DENTRO LA PARENTESI GIUSTA!)
+        // 3. COLLEGHIAMO IL CERVELLO AL GIOCO! (Il Cavo Mancante 🔌)
         // =================================================================
-        if (map.getSurvivor() != null) {
-            int sx = map.getSurvivor().getX();
-            int sy = map.getSurvivor().getY();
+        if (map.getSurvivor() != null && map.getZombie() != null) {
             
-            // STAMPIAMO NEL TERMINALE LE COORDINATE PER CONTROLLO
-            System.out.println("➡️ Posizione Sopravvissuto: X=" + sx + ", Y=" + sy);
-            
-            java.util.List<java.awt.Point> mosseValide = map.getValidMoves(sx, sy, 1);
-            
-            // STAMPIAMO QUANTE MOSSE HA TROVATO
-            System.out.println("➡️ Mosse valide calcolate: " + mosseValide.size());
-            
-            mapPanel.setValidMoves(mosseValide);
+            // A. Creiamo l'Arbitro e il Regista
+            GameManager gameManager = new GameManager(map.getSurvivor(), map.getZombie());
+            TurnController turnController = new TurnController(gameManager, map);
+
+            // B. Presentiamo lo Schermo al Regista, e il Regista allo Schermo!
+            mapPanel.setTurnController(turnController);
+            turnController.setMapPanel(mapPanel);
+
+        } else {
+            System.err.println("Attenzione: Sopravvissuto o Zombie non trovati nella mappa!");
         }
         // =================================================================
 
-        // 3. Lo aggiungiamo e sistemiamo la finestra
+        // 4. Aggiungiamo il pannello e mostriamo la finestra
         this.add(mapPanel);
         this.setResizable(false);
         this.pack();
