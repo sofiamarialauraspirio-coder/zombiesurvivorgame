@@ -5,7 +5,6 @@ import model.Survivor;
 import model.Zombie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import java.awt.Point;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class TurnControllerTest {
@@ -17,78 +16,64 @@ public class TurnControllerTest {
 
     @BeforeEach
     public void setUp() {
+        // Prepariamo il campo prima di ogni test
         gameMap = new GameMap();
-        survivor = new Survivor(2, 2); // Lo mettiamo al centro (2,2) per testare le adiacenze
+        survivor = new Survivor(2, 2); // Lo mettiamo al centro (2,2)
         zombie = new Zombie(10, 10);
         gm = new GameManager(survivor, zombie);
         turnController = new TurnController(gm, gameMap);
-        
-        // Rendiamo tutte le caselle adiacenti pavimenti calpestabili
-        gameMap.setTile(1, 2, GameMap.TILE_FLOOR); // Su
-        gameMap.setTile(3, 2, GameMap.TILE_FLOOR); // Giù
-        gameMap.setTile(2, 1, GameMap.TILE_FLOOR); // Sinistra
-        gameMap.setTile(2, 3, GameMap.TILE_FLOOR); // Destra
-        
-        turnController.startGame(); // Entriamo in P1_CHOICE
     }
 
     @Test
-    public void test1_PositivePlanning() {
-        // Arrange
-        Point validMove = new Point(3, 2); // Si muove a Destra
-        Point validBlock = new Point(1, 2); // Blocca a Sinistra
-
-        // Act
-        boolean result = turnController.setPlannedActions(validMove, validBlock);
-
-        // Assert
-        assertTrue(result, "Il metodo deve restituire true per scelte valide");
-        assertTrue(survivor.hasPlannedMove(), "La mossa deve essere salvata");
-        assertTrue(survivor.hasPlannedBlock(), "Il blocco deve essere salvato");
-        assertEquals(TurnController.GameState.P2_CHOICE, turnController.getCurrentState(), "Il turno deve passare a P2");
+    public void testInitialStateIsMenu() {
+        // Verifica la "State Integrity": il gioco deve partire dal MENU
+        assertEquals(TurnController.GameState.MENU, turnController.getCurrentState(), "All'avvio lo stato deve essere MENU");
     }
 
     @Test
-    public void test2_NegativeWall() {
-        // Arrange
-        gameMap.setTile(2, 3, GameMap.TILE_WALL); // Mettiamo un muro a destra
-        Point wallMove = new Point(3, 2); // Prova ad andare sul muro
-        Point validBlock = new Point(1, 2);
+    public void testInputProtectionInMenu() {
+        // Arrange: Assicuriamoci che la casella sia libera
+        gameMap.setTile(0, 1, GameMap.TILE_FLOOR);
 
-        // Act
-        boolean result = turnController.setPlannedActions(wallMove, validBlock);
+        // Act: Il giocatore prova a muoversi mentre è nel MENU
+        turnController.confirmMove(1, 0);
 
-        // Assert
-        assertFalse(result, "Il sistema deve rifiutare la pianificazione se il target è un muro");
-        assertFalse(survivor.hasPlannedMove());
-        assertEquals(TurnController.GameState.P1_CHOICE, turnController.getCurrentState());
+        // Assert: Input Protection! La mossa deve essere scartata
+        assertFalse(survivor.hasPlannedMove(), "Non deve essere possibile muoversi dal MENU");
+        assertEquals(TurnController.GameState.MENU, turnController.getCurrentState(), "Lo stato non deve cambiare");
     }
 
     @Test
-    public void test3_NegativeOverlap() {
-        // Arrange
-        Point move = new Point(3, 2); 
-        Point block = new Point(3, 2); // Stessa identica cella!
+    public void testWallRejection_NP23_InGame() {
+        // Arrange: Avviamo il gioco per passare a P1_CHOICE
+        turnController.startGame();
+        gameMap.setTile(0, 1, GameMap.TILE_WALL); // Piazziamo il muro
 
-        // Act
-        boolean result = turnController.setPlannedActions(move, block);
+        // Act: P1 prova ad andare sul muro
+        turnController.confirmMove(1, 0);
 
-        // Assert
-        assertFalse(result, "Il sistema deve rifiutare se Move e Block coincidono");
+        // Assert: La mossa fallisce e lo stato NON avanza
+        assertFalse(survivor.hasPlannedMove(), "La mossa NON deve essere salvata");
+        assertEquals(TurnController.GameState.P1_CHOICE, turnController.getCurrentState(), "Dobbiamo rimanere in P1_CHOICE");
     }
 
     @Test
-    public void test4_StatePersistence() {
-        // Arrange
-        Point validMove = new Point(3, 2); 
-        Point validBlock = new Point(1, 2);
+    public void testStrictSequentialFlow_RequiresMoveAndBlock() {
+        // Arrange: Avviamo il gioco
+        turnController.startGame();
+        gameMap.setTile(0, 1, GameMap.TILE_FLOOR);
 
-        // Act
-        turnController.setPlannedActions(validMove, validBlock);
+        // Act 1: P1 conferma SOLO la mossa
+        turnController.confirmMove(1, 0);
 
-        // Assert
-        assertEquals(2, survivor.getX(), "La X reale non deve cambiare");
-        assertEquals(2, survivor.getY(), "La Y reale non deve cambiare");
-        assertEquals(new Point(3, 2), survivor.getPlannedMove(), "Le coordinate future sono salvate separatamente");
+        // Assert 1: Il turno NON deve ancora passare a P2
+        assertTrue(survivor.hasPlannedMove());
+        assertEquals(TurnController.GameState.P1_CHOICE, turnController.getCurrentState(), "Serve anche il Block per passare il turno!");
+
+        // Act 2: P1 conferma anche l'azione (Block)
+        turnController.confirmBlock();
+
+        // Assert 2: Solo ora si passa al turno dello Zombie!
+        assertEquals(TurnController.GameState.P2_CHOICE, turnController.getCurrentState(), "Ora tocca a P2 (Zombie)");
     }
 }
