@@ -1,11 +1,12 @@
 package controller;
 
 import model.GameManager;
+import model.GameMap;
 
 public class TurnController {
     private GameManager gameManager;
+    private GameMap gameMap; // Aggiungiamo la Mappa!
 
-    // Un Enum è perfetto per sapere di chi è il turno!
     public enum PlayerTurn {
         SURVIVOR,
         ZOMBIE
@@ -13,34 +14,35 @@ public class TurnController {
 
     private PlayerTurn currentTurn;
 
-    public TurnController(GameManager gameManager) {
+    // Aggiorniamo il costruttore per ricevere anche la GameMap
+    public TurnController(GameManager gameManager, GameMap gameMap) {
         this.gameManager = gameManager;
-        this.currentTurn = PlayerTurn.SURVIVOR; // Inizia sempre il sopravvissuto
+        this.gameMap = gameMap;
+        this.currentTurn = PlayerTurn.SURVIVOR;
     }
 
     public void confirmMove(int targetX, int targetY) {
+        if (!gameMap.isWalkable(targetY, targetX)) {
+            System.out.println("❌ Mossa Rifiutata: Hai colpito un muro o il bordo mappa!");
+            // Usciamo dal metodo (return).
+            // Niente viene salvato e il turno NON passa (State Persistence).
+            return; 
+        }
+
+        // --- Logica della NP-19 (invariata) ---
         if (currentTurn == PlayerTurn.SURVIVOR) {
-            // 1. Il Sopravvissuto salva la mossa
             gameManager.getSurvivor().planMove(targetX, targetY);
-            
-            // 2. Passiamo il turno allo Zombie (nessuno si muove ancora visivamente!)
             currentTurn = PlayerTurn.ZOMBIE;
-            System.out.println("Sopravvissuto ha pianificato la mossa. Ora tocca allo Zombie.");
+            System.out.println("Sopravvissuto ha confermato. Tocca allo Zombie.");
             
         } else if (currentTurn == PlayerTurn.ZOMBIE) {
-            // 1. Lo Zombie salva la mossa
             gameManager.getZombie().planMove(targetX, targetY);
-            System.out.println("Zombie ha pianificato la mossa.");
+            System.out.println("Zombie ha confermato. Risoluzione turno globale!");
             
-            // 2. ENTRAMBI HANNO SCELTO! Fischiamo la fine del turno globale
             gameManager.resolveGlobalTurn();
-            
-            // 3. Ricomincia il giro dal Sopravvissuto per il turno successivo
             currentTurn = PlayerTurn.SURVIVOR;
         }
     }
 
-    public PlayerTurn getCurrentTurn() {
-        return currentTurn;
-    }
+    public PlayerTurn getCurrentTurn() { return currentTurn; }
 }
