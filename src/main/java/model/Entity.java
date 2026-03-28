@@ -74,4 +74,10 @@ public abstract class Entity {
     public boolean hasPlannedMove() { return hasPlannedMove; }
     public int getPlannedX() { return plannedX; }
     public int getPlannedY() { return plannedY; }
+
+    // ==========================================
+    // CANCELLAZIONE (Story 15: Conflict Resolution)
+    // ==========================================
+    public void cancelPlannedMove() { this.hasPlannedMove = false; }
+    public void cancelPlannedBlock() { this.plannedBlock = null; }
 }
