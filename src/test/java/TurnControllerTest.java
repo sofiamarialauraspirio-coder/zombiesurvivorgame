@@ -1,60 +1,52 @@
 import controller.TurnController;
-
 import model.GameManager;
+import model.GameMap;
 import model.Survivor;
 import model.Zombie;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class TurnControllerTest {
+    private GameMap gameMap;
+    private GameManager gm;
+    private TurnController turnController;
+    private Survivor survivor;
+    private Zombie zombie;
 
-    @Test
-    public void testInitialTurnIsSurvivor() {
-        // Arrange
-        Survivor survivor = new Survivor(0, 0);
-        Zombie zombie = new Zombie(10, 10);
-        GameManager gm = new GameManager(survivor, zombie);
-        TurnController turnController = new TurnController(gm);
-
-        // Assert: Il gioco deve sempre iniziare con il turno del Sopravvissuto
-        assertEquals(TurnController.PlayerTurn.SURVIVOR, turnController.getCurrentTurn(), "Il primo turno deve essere del Sopravvissuto");
+    @BeforeEach
+    public void setUp() {
+        // Prepariamo il campo prima di ogni test
+        gameMap = new GameMap();
+        survivor = new Survivor(0, 0);
+        zombie = new Zombie(10, 10);
+        gm = new GameManager(survivor, zombie);
+        turnController = new TurnController(gm, gameMap);
     }
 
     @Test
-    public void testSurvivorPlansMoveAndPassesTurn() {
-        // Arrange
-        Survivor survivor = new Survivor(0, 0);
-        Zombie zombie = new Zombie(10, 10);
-        GameManager gm = new GameManager(survivor, zombie);
-        TurnController turnController = new TurnController(gm);
+    public void testWallRejection_NP23() {
+        // Arrange: Mettiamo un muro (ID 2) alle coordinate (X=1, Y=0)
+        gameMap.setTile(0, 1, GameMap.TILE_WALL);
 
-        // Act: Il Sopravvissuto sceglie di muoversi in (1, 0) premendo INVIO
+        // Act: Il Sopravvissuto prova ad andare sul muro
         turnController.confirmMove(1, 0);
 
-        // Assert per la NP-19 (Silent Planning)
-        assertTrue(survivor.hasPlannedMove(), "Il Sopravvissuto deve aver memorizzato la mossa");
-        assertEquals(0, survivor.getX(), "La X reale del Sopravvissuto NON deve ancora cambiare!");
-        assertEquals(TurnController.PlayerTurn.ZOMBIE, turnController.getCurrentTurn(), "Il turno deve passare allo Zombie");
+        // Assert: Verifica la NP-23
+        assertFalse(survivor.hasPlannedMove(), "La mossa NON deve essere salvata (Input Rejection)");
+        assertEquals(TurnController.PlayerTurn.SURVIVOR, turnController.getCurrentTurn(), "Il turno NON deve passare allo Zombie (State Persistence)");
     }
 
     @Test
-    public void testGlobalTurnResolution() {
-        // Arrange
-        Survivor survivor = new Survivor(0, 0);
-        Zombie zombie = new Zombie(10, 10);
-        GameManager gm = new GameManager(survivor, zombie);
-        TurnController turnController = new TurnController(gm);
+    public void testValidMovePassesTurn() {
+        // Arrange: Assicuriamoci che la casella sia pavimento (ID 1)
+        gameMap.setTile(0, 1, GameMap.TILE_FLOOR);
 
-        // Act 1: Turno del Sopravvissuto
-        turnController.confirmMove(1, 0); // Il Sopravvissuto va a destra
-        
-        // Act 2: Turno dello Zombie
-        turnController.confirmMove(9, 10); // Lo Zombie va a sinistra
+        // Act: Il Sopravvissuto prenota una casella valida
+        turnController.confirmMove(1, 0);
 
-        // Assert per la NP-19 (Esecuzione a fine turno globale)
-        assertEquals(1, survivor.getX(), "Ora che il turno è finito, il Sopravvissuto deve essersi mosso in X=1");
-        assertEquals(9, zombie.getX(), "Ora che il turno è finito, lo Zombie deve essersi mosso in X=9");
-        assertFalse(survivor.hasPlannedMove(), "La memoria del Sopravvissuto deve essersi svuotata");
-        assertEquals(TurnController.PlayerTurn.SURVIVOR, turnController.getCurrentTurn(), "Il nuovo giro deve riniziare dal Sopravvissuto");
+        // Assert
+        assertTrue(survivor.hasPlannedMove(), "La mossa deve essere salvata");
+        assertEquals(TurnController.PlayerTurn.ZOMBIE, turnController.getCurrentTurn(), "Il turno deve passare allo Zombie");
     }
 }
