@@ -1,34 +1,44 @@
 package controller;
 
-import java.awt.Point;
-import model.Entity;
 import model.GameManager;
 import model.GameMap;
+import view.MapPanel; // NP-21: Importiamo lo Schermo!
 
 public class TurnController {
     private GameManager gameManager;
     private GameMap gameMap;
+    
+    // ==========================================
+    // NP-21: Riferimento al MapPanel (Lo Schermo)
+    // ==========================================
+    private MapPanel mapPanel;
 
-    // ==========================================
-    // STATE INTEGRITY (Macchina a Stati)
-    // ==========================================
     public enum GameState {
         MENU,
-        P1_CHOICE,    // Turno del Sopravvissuto
-        P2_CHOICE,    // Turno dello Zombie
-        RESOLUTION,   // Esecuzione simultanea
-        END_GAME      // Partita finita
+        P1_CHOICE,    
+        P2_CHOICE,    
+        RESOLUTION,   
+        END_GAME      
     }
 
     private GameState currentState;
 
+    private boolean p1HasMoved = false;
+    private boolean p1HasBlocked = false; 
+    private boolean p2HasMoved = false;
+    private boolean p2HasBlocked = false; 
+
     public TurnController(GameManager gameManager, GameMap gameMap) {
         this.gameManager = gameManager;
         this.gameMap = gameMap;
-        this.currentState = GameState.MENU; // Il gioco parte sempre dal Menu
+        this.currentState = GameState.MENU; 
     }
 
-    // Passaggio da MENU a Gioco (da chiamare quando si clicca "Start")
+    // NP-21: Metodo per collegare la TV alla Console
+    public void setMapPanel(MapPanel mapPanel) {
+        this.mapPanel = mapPanel;
+    }
+
     public void startGame() {
         if (currentState == GameState.MENU) {
             currentState = GameState.P1_CHOICE;
@@ -36,97 +46,96 @@ public class TurnController {
         }
     }
 
-    // ==========================================
-    // USER STORY: PIANIFICAZIONE COMPLETA (Move + Block)
-    // ==========================================
-    public boolean setPlannedActions(Point move, Point block) {
-        // 1. Input Protection: Siamo nel turno di qualcuno?
+    public void confirmMove(int targetX, int targetY) {
         if (currentState != GameState.P1_CHOICE && currentState != GameState.P2_CHOICE) {
-            System.out.println("❌ Errore: Non è la fase di pianificazione.");
-            return false; 
+            System.out.println("❌ Input bloccato: Non è il momento di scegliere le mosse!");
+            return;
         }
 
-        // Identifichiamo chi sta giocando
-        Entity currentPlayer = (currentState == GameState.P1_CHOICE) ? gameManager.getSurvivor() : gameManager.getZombie();
-
-        // 2. Integrità della Scelta (Non sovrapponibili)
-        if (move.equals(block)) {
-            System.out.println("❌ Errore: Mossa e Blocco non possono coincidere.");
-            return false;
+        if (!gameMap.isWalkable(targetY, targetX)) {
+            System.out.println("❌ Mossa Rifiutata: Hai colpito un muro o il bordo mappa!");
+            return; 
         }
 
-        // 3. Validazione Destinazione (Muro e Adiacenza)
-        // Attenzione: isWalkable usa (riga, colonna) -> (y, x)
-        if (!gameMap.isWalkable(move.y, move.x)) {
-            System.out.println("❌ Errore: Non puoi muoverti su un muro o fuori mappa.");
-            return false;
-        }
-        
-        // Calcolo adiacenza (Distanza di Manhattan)
-        int distance = Math.abs(move.x - currentPlayer.getX()) + Math.abs(move.y - currentPlayer.getY());
-        int maxDist = currentPlayer.hasDoubleMoveBonus() ? 2 : 1; // Bonus gestione NP-19
-        if (distance > maxDist || distance == 0) {
-            System.out.println("❌ Errore: Casella di destinazione troppo lontana.");
-            return false;
-        }
-
-        // 4. Validazione Blocco (Muro e Occupata)
-        if (!gameMap.isWalkable(block.y, block.x)) {
-            System.out.println("❌ Errore: Non puoi bloccare una casella già ostruita.");
-            return false;
-        }
-        // Controlliamo che non ci sia sopra un giocatore
-        if ((block.x == gameManager.getSurvivor().getX() && block.y == gameManager.getSurvivor().getY()) ||
-            (block.x == gameManager.getZombie().getX() && block.y == gameManager.getZombie().getY())) {
-            System.out.println("❌ Errore: Non puoi bloccare una casella con un giocatore sopra.");
-            return false;
-        }
-
-        // SE ARRIVIAMO QUI: TUTTO VALIDO! Memorizziamo le scelte 💾
-        currentPlayer.planMove(move.x, move.y);
-        currentPlayer.planBlock(block.x, block.y);
-
-        // 5. Conferma e Passaggio Turno
         if (currentState == GameState.P1_CHOICE) {
-            currentState = GameState.P2_CHOICE;
-            System.out.println("P1 ha confermato le azioni. Tocca a P2 (Zombie).");
-        } else {
-            currentState = GameState.RESOLUTION;
-            System.out.println("P2 ha confermato. Entriamo in fase di RESOLUTION!");
-            // Inneschiamo la risoluzione finale automaticamente
-            executeResolution(); 
-        }
+            gameManager.getSurvivor().planMove(targetX, targetY);
+            p1HasMoved = true;
+            System.out.println("P1 (Sopravvissuto) ha confermato la mossa.");
+            checkP1Finished();
 
-        return true; 
+        } else if (currentState == GameState.P2_CHOICE) {
+            gameManager.getZombie().planMove(targetX, targetY);
+            p2HasMoved = true;
+            System.out.println("P2 (Zombie) ha confermato la mossa.");
+            checkP2Finished();
+        }
     }
 
-    // ==========================================
-    // ACTION GATING & END CONDITION CHECK
-    // ==========================================
+    public void confirmBlock() {
+        if (currentState == GameState.P1_CHOICE) {
+            p1HasBlocked = true;
+            System.out.println("P1 ha confermato il Block.");
+            checkP1Finished();
+        } else if (currentState == GameState.P2_CHOICE) {
+            p2HasBlocked = true;
+            System.out.println("P2 ha confermato il Block.");
+            checkP2Finished();
+        }
+    }
+
+    private void checkP1Finished() {
+        if (p1HasMoved && p1HasBlocked) {
+            currentState = GameState.P2_CHOICE;
+            System.out.println("P1 ha finito. Turno P2 (Zombie).");
+            
+            // ==========================================
+            // NP-21: VISUAL RESET (Nascondiamo a P2 le scelte di P1)
+            // ==========================================
+            if (mapPanel != null) {
+                mapPanel.clearIndicators();
+            }
+        }
+    }
+
+    private void checkP2Finished() {
+        if (p2HasMoved && p2HasBlocked) {
+            currentState = GameState.RESOLUTION;
+            System.out.println("Entrambi hanno scelto. Fase di RESOLUTION!");
+            
+            // NP-21: VISUAL RESET (Puliamo tutto prima dell'esecuzione)
+            if (mapPanel != null) {
+                mapPanel.clearIndicators();
+            }
+            
+            executeResolution();
+        }
+    }
+
     private void executeResolution() {
         if (currentState == GameState.MENU || currentState == GameState.END_GAME) {
-            return; // Action Gating di sicurezza
+            return; 
         }
 
-        // 1. Eseguiamo le mosse vere e proprie sui personaggi
         gameManager.resolveGlobalTurn();
 
-        // 2. End Condition Check: Il gioco è finito?
+        p1HasMoved = false; p1HasBlocked = false;
+        p2HasMoved = false; p2HasBlocked = false;
+
         if (checkVictoryCondition()) {
             currentState = GameState.END_GAME;
             System.out.println("🏆 PARTITA FINITA!");
         } else {
-            // Se nessuno ha vinto, si ricomincia da P1
             currentState = GameState.P1_CHOICE;
-            System.out.println("Nuovo turno globale. Tocca a P1 (Sopravvissuto).");
+            System.out.println("Nuovo turno globale. Tocca a P1.");
         }
     }
 
-    // Da espandere con la vera logica di vittoria 
     private boolean checkVictoryCondition() {
-        return false; // Per ora la partita continua all'infinito
+        return false; 
     }
 
-    // GETTER
     public GameState getCurrentState() { return currentState; }
+    
+    public void setP1HasBlocked(boolean b) { this.p1HasBlocked = b; }
+    public void setP2HasBlocked(boolean b) { this.p2HasBlocked = b; }
 }
