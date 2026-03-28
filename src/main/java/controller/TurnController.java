@@ -116,11 +116,22 @@ public class TurnController {
             return; 
         }
 
+        // 1. Risoluzione di scontri e calcolo mosse
         gameManager.resolveGlobalTurn();
 
+        // ==========================================
+        // STORY 15: SIMULTANEOUS VIEW REFRESH
+        // Diciamo allo schermo di ridisegnare i personaggi nelle nuove posizioni!
+        // ==========================================
+        if (mapPanel != null) {
+            mapPanel.repaint(); 
+        }
+
+        // 2. Resettiamo le variabili per il prossimo turno
         p1HasMoved = false; p1HasBlocked = false;
         p2HasMoved = false; p2HasBlocked = false;
 
+        // 3. End Condition Check
         if (checkVictoryCondition()) {
             currentState = GameState.END_GAME;
             System.out.println("🏆 PARTITA FINITA!");
