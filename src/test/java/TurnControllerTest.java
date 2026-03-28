@@ -25,28 +25,55 @@ public class TurnControllerTest {
     }
 
     @Test
-    public void testWallRejection_NP23() {
-        // Arrange: Mettiamo un muro (ID 2) alle coordinate (X=1, Y=0)
-        gameMap.setTile(0, 1, GameMap.TILE_WALL);
-
-        // Act: Il Sopravvissuto prova ad andare sul muro
-        turnController.confirmMove(1, 0);
-
-        // Assert: Verifica la NP-23
-        assertFalse(survivor.hasPlannedMove(), "La mossa NON deve essere salvata (Input Rejection)");
-        assertEquals(TurnController.PlayerTurn.SURVIVOR, turnController.getCurrentTurn(), "Il turno NON deve passare allo Zombie (State Persistence)");
+    public void testInitialStateIsMenu() {
+        // Verifica la "State Integrity": il gioco deve partire dal MENU
+        assertEquals(TurnController.GameState.MENU, turnController.getCurrentState(), "All'avvio lo stato deve essere MENU");
     }
 
     @Test
-    public void testValidMovePassesTurn() {
-        // Arrange: Assicuriamoci che la casella sia pavimento (ID 1)
+    public void testInputProtectionInMenu() {
+        // Arrange: Assicuriamoci che la casella sia libera
         gameMap.setTile(0, 1, GameMap.TILE_FLOOR);
 
-        // Act: Il Sopravvissuto prenota una casella valida
+        // Act: Il giocatore prova a cliccare sulla mappa mentre è nel MENU
         turnController.confirmMove(1, 0);
 
-        // Assert
-        assertTrue(survivor.hasPlannedMove(), "La mossa deve essere salvata");
-        assertEquals(TurnController.PlayerTurn.ZOMBIE, turnController.getCurrentTurn(), "Il turno deve passare allo Zombie");
+        // Assert: Input Protection! La mossa deve essere scartata
+        assertFalse(survivor.hasPlannedMove(), "Non deve essere possibile muoversi dal MENU");
+        assertEquals(TurnController.GameState.MENU, turnController.getCurrentState(), "Lo stato non deve cambiare");
+    }
+
+    @Test
+    public void testWallRejection_NP23_InGame() {
+        // Arrange: Avviamo il gioco per passare a P1_CHOICE
+        turnController.startGame();
+        gameMap.setTile(0, 1, GameMap.TILE_WALL); // Piazziamo il muro
+
+        // Act: P1 prova ad andare sul muro
+        turnController.confirmMove(1, 0);
+
+        // Assert: La mossa fallisce e lo stato NON avanza
+        assertFalse(survivor.hasPlannedMove(), "La mossa NON deve essere salvata");
+        assertEquals(TurnController.GameState.P1_CHOICE, turnController.getCurrentState(), "Dobbiamo rimanere in P1_CHOICE");
+    }
+
+    @Test
+    public void testStrictSequentialFlow_RequiresMoveAndBlock() {
+        // Arrange: Avviamo il gioco
+        turnController.startGame();
+        gameMap.setTile(0, 1, GameMap.TILE_FLOOR);
+
+        // Act 1: P1 conferma SOLO la mossa
+        turnController.confirmMove(1, 0);
+
+        // Assert 1: Il turno NON deve ancora passare a P2 (Resolution Trigger)
+        assertTrue(survivor.hasPlannedMove());
+        assertEquals(TurnController.GameState.P1_CHOICE, turnController.getCurrentState(), "Serve anche il Block per passare il turno!");
+
+        // Act 2: P1 conferma anche l'azione (Block)
+        turnController.confirmBlock();
+
+        // Assert 2: Solo ora si passa al turno dello Zombie!
+        assertEquals(TurnController.GameState.P2_CHOICE, turnController.getCurrentState(), "Ora tocca a P2 (Zombie)");
     }
 }
