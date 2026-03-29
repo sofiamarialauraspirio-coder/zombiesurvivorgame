@@ -71,7 +71,7 @@ public class TurnControllerTest {
         assertEquals(TurnController.GameState.P1_CHOICE, turnController.getCurrentState(), "Serve anche il Block per passare il turno!");
 
         // Act 2: P1 conferma anche l'azione (Block)
-        turnController.confirmBlock();
+        turnController.confirmBlock(0, 0);
 
         // Assert 2: Solo ora si passa al turno dello Zombie!
         assertEquals(TurnController.GameState.P2_CHOICE, turnController.getCurrentState(), "Ora tocca a P2 (Zombie)");

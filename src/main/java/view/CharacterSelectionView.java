@@ -81,8 +81,57 @@ public class CharacterSelectionView extends JPanel {
                            "</div></html>";
         JLabel lblMessaggio = new JLabel(testoHTML, SwingConstants.CENTER);
 
-        IosGlassButton btnOk = new IosGlassButton("OK");
-        btnOk.addActionListener(e -> dialog.dispose()); 
+        IosGlassButton btnOk = new IosGlassButton("INIZIA PARTITA");
+        
+        // =================================================================
+        // LA MAGIA AVVIENE QUANDO CLICCHI "INIZIA PARTITA"!
+        // =================================================================
+        btnOk.addActionListener(e -> {
+            dialog.dispose(); // Chiudi il popup
+
+            // 1. CARICAMENTO MAPPA
+            MapLoader loader = new MapLoader();
+            GameMap map = loader.loadMap("src/main/resources/mappa_livello1.json"); 
+            MapPanel mapPanel = new MapPanel(map);
+
+            // 2. COLLEGHIAMO IL CERVELLO
+            if (map.getSurvivor() != null && map.getZombie() != null) {
+                GameManager gameManager = new GameManager(map.getSurvivor(), map.getZombie());
+                TurnController turnController = new TurnController(gameManager, map);
+
+                mapPanel.setTurnController(turnController);
+                turnController.setMapPanel(mapPanel);
+
+                // ==========================================================
+                // ECCO LA MODIFICA: Diciamo all'Arbitro chi è il Giocatore 1
+                // ==========================================================
+                boolean p1IsSurvivor = "SOPRAVVISSUTO".equals(session.getPlayer1Choice());
+                turnController.setSurvivorIsP1(p1IsSurvivor);
+
+                // 3. 🚀 AVVIAMO IL MOTORE E IMPOSTIAMO LE PRIME MOSSE GIALLE!
+                turnController.startGame(); // Questo sposta lo stato su P1_CHOICE
+                
+                // Evidenziamo le mosse iniziali in base a chi è il Giocatore 1
+                if ("SOPRAVVISSUTO".equals(session.getPlayer1Choice())) {
+                    mapPanel.evidenziaMossePersonaggio(map.getSurvivor().getX(), map.getSurvivor().getY());
+                } else {
+                    mapPanel.evidenziaMossePersonaggio(map.getZombie().getX(), map.getZombie().getY());
+                }
+                
+            } else {
+                System.err.println("Attenzione: Sopravvissuto o Zombie non trovati nella mappa!");
+            }
+
+            // 4. CAMBIO SCHERMO: Mostriamo la mappa!
+            finestraPrincipale.setContentPane(mapPanel);
+            finestraPrincipale.revalidate();
+            finestraPrincipale.repaint();
+            finestraPrincipale.pack();
+            finestraPrincipale.setLocationRelativeTo(null);
+            
+            // FONDAMENTALE PER LA TASTIERA: diamo il focus al pannello appena appare!
+            SwingUtilities.invokeLater(() -> mapPanel.requestFocusInWindow());
+        });
 
         JPanel pnlBottone = new JPanel(new FlowLayout(FlowLayout.CENTER));
         pnlBottone.setOpaque(false);
@@ -95,34 +144,6 @@ public class CharacterSelectionView extends JPanel {
         dialog.pack(); 
         dialog.setLocationRelativeTo(parentWindow); 
         dialog.setVisible(true); 
-
-        // --- CARICAMENTO MAPPA E COLLEGAMENTO CERVELLO ---
-        MapLoader loader = new MapLoader();
-        GameMap map = loader.loadMap("src/main/resources/mappa_livello1.json"); 
-        MapPanel mapPanel = new MapPanel(map);
-
-        // =================================================================
-        // COLLEGHIAMO IL CERVELLO AL GIOCO! (Il Cavo Mancante 🔌)
-        // =================================================================
-        if (map.getSurvivor() != null && map.getZombie() != null) {
-            // 1. Creiamo l'Arbitro e il Regista
-            GameManager gameManager = new GameManager(map.getSurvivor(), map.getZombie());
-            TurnController turnController = new TurnController(gameManager, map);
-
-            // 2. Presentiamo lo Schermo al Regista, e il Regista allo Schermo!
-            mapPanel.setTurnController(turnController);
-            turnController.setMapPanel(mapPanel);
-            
-        } else {
-            System.err.println("Attenzione: Sopravvissuto o Zombie non trovati nella mappa!");
-        }
-        // =================================================================
-
-        finestraPrincipale.setContentPane(mapPanel);
-        finestraPrincipale.revalidate();
-        finestraPrincipale.repaint();
-        finestraPrincipale.pack();
-        finestraPrincipale.setLocationRelativeTo(null);
     }
 
     // --- CLASSE INTERNA PER I BOTTONI ---

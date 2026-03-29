@@ -52,7 +52,7 @@ public class ActiveTurnTest {
         int startY = map.getSurvivor().getY();
         
         turnController.confirmMove(startX, startY - 1); // Mossa simulata
-        turnController.confirmBlock();                  // Blocco confermato
+        turnController.confirmBlock(0, 0);                  // Blocco confermato
 
         // Assert: Lo stato deve cambiare al turno dello Zombie
         assertEquals(GameState.P2_CHOICE, turnController.getCurrentState(), 
