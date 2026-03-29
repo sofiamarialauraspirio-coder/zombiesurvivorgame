@@ -90,7 +90,25 @@ public class TurnController {
         // 1. Risoluzione di scontri e calcolo mosse
         gameManager.resolveGlobalTurn();
         
-        // 2. Ridisegniamo la mappa con le nuove posizioni
+        if (gameMap.getKey() != null) {
+            // Trasformiamo i pixel della chiave in coordinate della griglia (diviso 64)
+            int keyGridX = gameMap.getKey().getX() / 64;
+            int keyGridY = gameMap.getKey().getY() / 64;
+            
+            // Controlliamo se il Sopravvissuto è esattamente sopra la chiave
+            if (gameMap.getSurvivor().getX() == keyGridX && gameMap.getSurvivor().getY() == keyGridY) {
+                
+                // Attribute Update & Persistence
+                gameMap.getSurvivor().collectKey();
+                
+                // Entity Removal (Il MapPanel smetterà di disegnarla automaticamente!)
+                gameMap.setKey(null);
+                
+                System.out.println("🔑 IL SOPRAVVISSUTO HA RACCOLTO LA CHIAVE!");
+            }
+        }
+        
+        // 2. Ridisegniamo la mappa con le nuove posizioni (e senza la chiave se raccolta!)
         if (mapPanel != null) mapPanel.repaint(); 
 
         // 3. Resettiamo le variabili per il nuovo turno
@@ -100,9 +118,7 @@ public class TurnController {
         // 4. Passiamo la palla di nuovo al Giocatore 1
         currentState = GameState.P1_CHOICE;
 
-        // ==========================================================
-        // IL PEZZO MANCANTE: Generiamo le mosse gialle per il NUOVO turno!
-        // ==========================================================
+        // 5. Generiamo le mosse gialle per il NUOVO turno!
         if (mapPanel != null) {
             if (survivorIsP1) {
                 mapPanel.evidenziaMossePersonaggio(gameMap.getSurvivor().getX(), gameMap.getSurvivor().getY());
