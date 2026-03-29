@@ -51,9 +51,17 @@ public class GameMap {
             return false;
         }
 
-        // 3. Controllo Porta Chiusa
-        if (door != null && !door.isOpen()) {
+        // ==========================================
+        // 3. CONTROLLO PORTA AGGIORNATO (NP-32)
+        // ==========================================
+        if (door != null) {
+            // Se stiamo controllando le coordinate della porta...
             if (row == door.getGridRow() && (col == door.getGridColLeft() || col == door.getGridColRight())) {
+                // ...e il Sopravvissuto ha la chiave, LO FACCIAMO PASSARE!
+                if (survivor != null && survivor.hasKey()) {
+                    return true; 
+                }
+                // Altrimenti, se non ha la chiave, rimane bloccato
                 return false; 
             }
         }
