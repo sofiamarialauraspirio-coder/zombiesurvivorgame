@@ -3,6 +3,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import model.GameMap; 
 import model.MapLoader;
+
 public class GameMapTest {
 
     @Test
@@ -14,22 +15,32 @@ public class GameMapTest {
 
     @Test
     public void testLoadMapFromJson() {
-        // 1. Creiamo il nostro "Lavoratore" che sa leggere i file
         MapLoader loader = new MapLoader();
-        
-        // Assicurati che questo percorso sia esatto
         String percorsoFile = "src/main/resources/mappa_livello1.json";
-
-        // 2. Facciamo caricare la mappa al loader!
+        
         GameMap map = loader.loadMap(percorsoFile);
-
-        // 3. Verifichiamo che la mappa esista davvero
         assertNotNull(map, "La mappa caricata non deve essere null");
 
-        // 4. Controlliamo il tile (0,0)
         int tileInAltoASinistra = map.getTile(0, 0);
+        assertEquals(287, tileInAltoASinistra, "Il tile (0,0) dovrebbe essere un muro");
+    }
+
+    // ==========================================
+    // TDD REQUIREMENT - Verifica che i muri siano ostacoli
+    // ==========================================
+    @Test
+    public void testWallIsImpassable() {
+        GameMap map = new GameMap();
         
-        // Sostituisci "1" con il numero che su Tiled rappresenta il tuo muro
-        assertEquals(287, tileInAltoASinistra, "Il tile (0,0) dovrebbe essere un muro");;
+        // Usiamo l'ID corretto del muro (ora impostato a 287 in GameMap)
+        map.setTile(5, 5, GameMap.TILE_WALL);
+        // Usiamo l'ID del pavimento libero
+        map.setTile(5, 6, GameMap.TILE_FLOOR);
+
+        // Assert: Il muro NON deve essere calpestabile
+        assertFalse(map.isWalkable(5, 5), "La logica deve registrare il muro come ostacolo invalicabile");
+        
+        // Assert: Il pavimento DEVE essere calpestabile
+        assertTrue(map.isWalkable(5, 6), "La logica deve registrare il pavimento come calpestabile");
     }
 }

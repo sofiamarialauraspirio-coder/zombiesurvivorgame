@@ -19,22 +19,18 @@ public class GameMap {
     private Zombie zombie;     
     private Survivor survivor;
 
-    // Costanti fondamentali per la calpestabilità
+    // ==========================================
+    // AGGIORNAMENTO ID TILE (Basato sul file JSON Tiled)
+    // ==========================================
     public static final int TILE_FLOOR = 1; 
-    public static final int TILE_WALL = 2;
+    public static final int TILE_WALL = 287; // <-- IL VERO ID DEL MURO!
 
     public GameMap() {
-        // Inizializza l'array 12x12
         logicalMatrix = new int[rows][cols];
     }
 
-    public int getRows() {
-        return rows;
-    }
-
-    public int getCols() {
-        return cols;
-    }
+    public int getRows() { return rows; }
+    public int getCols() { return cols; }
 
     public void setTile(int row, int col, int tileId) {
         logicalMatrix[row][col] = tileId;
@@ -44,24 +40,13 @@ public class GameMap {
         return logicalMatrix[row][col];
     }
 
-    /**
-     * LOGICA DI CALPESTABILITÀ AGGIORNATA
-     * Ora permette il movimento SOLO se la casella è un pavimento (ID 1).
-     * Questo esclude muri, bordi mappa e porte chiuse.
-     */
-    /**
-     * LOGICA DI CALPESTABILITÀ RIPRISTINATA (E CORRETTA)
-     * Blocca solo i Muri (ID 2) e le Porte Chiuse.
-    */
     public boolean isWalkable(int row, int col) {
         // 1. Controllo bordi logici dell'array
         if (row < 0 || row >= rows || col < 0 || col >= cols) {
             return false;
         }
         
-        // 2. Controllo Muri: Blocchiamo solo se è esplicitamente un muro (TILE_WALL = 2)
-        // Questo permetterà al giallo di apparire sui bordi grigi (ID diverso da 2),
-        // ma è meglio che non vedere nulla!
+        // 2. Controllo Muri: Blocchiamo se è il muro di Tiled (287)
         if (logicalMatrix[row][col] == TILE_WALL) {
             return false;
         }
@@ -73,7 +58,6 @@ public class GameMap {
             }
         }
 
-        // Se è arrivato qui, consideriamo la casella calpestabile
         return true; 
     }
 
@@ -102,7 +86,6 @@ public class GameMap {
     }
 
     // --- GETTERS E SETTERS ---
-
     public Key getKey() { return key; }
     public void setKey(Key key) { this.key = key; }
 
@@ -115,27 +98,14 @@ public class GameMap {
     public Survivor getSurvivor() { return survivor; }
     public void setSurvivor(Survivor survivor) { this.survivor = survivor; }
 
-    // ===========================================================
-    // LOGICA DI MOVIMENTO (NP-35 / NP-19)
-    // ===========================================================
+    // --- LOGICA DI MOVIMENTO ---
     public List<Point> getValidMoves(int startX, int startY, int maxDistance) {
         List<Point> validMoves = new ArrayList<>();
 
-        // Calcolo delle 4 direzioni (Croce)
-        // isWalkable richiede (Riga, Colonna) -> (Y, X)
-        
-        if (isWalkable(startY - 1, startX)) {
-            validMoves.add(new Point(startX, startY - 1)); // SU
-        }
-        if (isWalkable(startY + 1, startX)) {
-            validMoves.add(new Point(startX, startY + 1)); // GIÙ
-        }
-        if (isWalkable(startY, startX - 1)) {
-            validMoves.add(new Point(startX - 1, startY)); // SINISTRA
-        }
-        if (isWalkable(startY, startX + 1)) {
-            validMoves.add(new Point(startX + 1, startY)); // DESTRA
-        }
+        if (isWalkable(startY - 1, startX)) validMoves.add(new Point(startX, startY - 1)); // SU
+        if (isWalkable(startY + 1, startX)) validMoves.add(new Point(startX, startY + 1)); // GIÙ
+        if (isWalkable(startY, startX - 1)) validMoves.add(new Point(startX - 1, startY)); // SINISTRA
+        if (isWalkable(startY, startX + 1)) validMoves.add(new Point(startX + 1, startY)); // DESTRA
 
         return validMoves;
     }
