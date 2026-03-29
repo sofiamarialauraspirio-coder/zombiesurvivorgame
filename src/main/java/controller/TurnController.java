@@ -9,7 +9,10 @@ public class TurnController {
     private GameMap gameMap;
     private MapPanel mapPanel;
 
-    public enum GameState { MENU, P1_CHOICE, P2_CHOICE, RESOLUTION, END_GAME }
+    // ==========================================
+    // NP-32: Aggiunto stato SURVIVOR_VICTORY
+    // ==========================================
+    public enum GameState { MENU, P1_CHOICE, P2_CHOICE, RESOLUTION, SURVIVOR_VICTORY, END_GAME }
     private GameState currentState;
 
     private boolean p1HasMoved = false;
@@ -17,7 +20,7 @@ public class TurnController {
     private boolean p2HasMoved = false;
     private boolean p2HasBlocked = false; 
     
-    // NUOVO: L'arbitro ricorda chi hai scelto come P1!
+    // L'arbitro ricorda chi hai scelto come P1!
     private boolean survivorIsP1 = true; 
 
     public TurnController(GameManager gameManager, GameMap gameMap) {
@@ -29,7 +32,7 @@ public class TurnController {
     public void setMapPanel(MapPanel mapPanel) { this.mapPanel = mapPanel; }
     public void setSurvivorIsP1(boolean isP1) { this.survivorIsP1 = isP1; }
 
-    // NUOVO: Capisce di chi è il turno in modo dinamico
+    // Capisce di chi è il turno in modo dinamico
     public boolean isSurvivorTurn() {
         if (currentState == GameState.P1_CHOICE) return survivorIsP1;
         if (currentState == GameState.P2_CHOICE) return !survivorIsP1;
@@ -85,7 +88,7 @@ public class TurnController {
     }
 
     private void executeResolution() {
-        if (currentState == GameState.MENU || currentState == GameState.END_GAME) return; 
+        if (currentState == GameState.MENU || currentState == GameState.END_GAME || currentState == GameState.SURVIVOR_VICTORY) return; 
         
         // 1. Risoluzione di scontri e calcolo mosse
         gameManager.resolveGlobalTurn();
@@ -115,19 +118,59 @@ public class TurnController {
         p1HasMoved = false; p1HasBlocked = false;
         p2HasMoved = false; p2HasBlocked = false;
 
-        // 4. Passiamo la palla di nuovo al Giocatore 1
-        currentState = GameState.P1_CHOICE;
 
-        // 5. Generiamo le mosse gialle per il NUOVO turno!
-        if (mapPanel != null) {
-            if (survivorIsP1) {
-                mapPanel.evidenziaMossePersonaggio(gameMap.getSurvivor().getX(), gameMap.getSurvivor().getY());
-            } else {
-                mapPanel.evidenziaMossePersonaggio(gameMap.getZombie().getX(), gameMap.getZombie().getY());
+        // ==========================================================
+        // NP-32: CONTROLLO VITTORIA POST-RISOLUZIONE
+        // ==========================================================
+        if (checkVictoryCondition()) {
+            currentState = GameState.SURVIVOR_VICTORY;
+            System.out.println("🏆 IL SOPRAVVISSUTO HA VINTO!");
+            
+            // Ridisegniamo un'ultima volta per mostrare la schermata di vittoria sul MapPanel
+            if (mapPanel != null) {
+                mapPanel.repaint();
             }
+        } else {
+            // ==========================================================
+            // SE NON HA VINTO, CONTINUA IL GIOCO NORMALMENTE
+            // ==========================================================
+            // 4. Passiamo la palla di nuovo al Giocatore 1
+            currentState = GameState.P1_CHOICE;
+
+            // 5. Generiamo le mosse gialle per il NUOVO turno!
+            if (mapPanel != null) {
+                if (survivorIsP1) {
+                    mapPanel.evidenziaMossePersonaggio(gameMap.getSurvivor().getX(), gameMap.getSurvivor().getY());
+                } else {
+                    mapPanel.evidenziaMossePersonaggio(gameMap.getZombie().getX(), gameMap.getZombie().getY());
+                }
+            }
+            
+            System.out.println("🔄 Nuovo turno iniziato! Tocca di nuovo a P1.");
         }
-        
-        System.out.println("🔄 Nuovo turno iniziato! Tocca di nuovo a P1.");
+    }
+
+    // ==========================================================
+    // NP-32: REQUISITI DI VITTORIA 
+    // ==========================================================
+    private boolean checkVictoryCondition() {
+        if (gameMap == null || gameMap.getSurvivor() == null || gameMap.getDoor() == null) {
+            return false;
+        }
+
+        model.Survivor s = gameMap.getSurvivor();
+        model.Door d = gameMap.getDoor();
+
+        // 1. Il Sopravvissuto è su una delle due caselle della porta?
+        boolean isOnDoor = (s.getY() == d.getGridRow()) && 
+                           (s.getX() == d.getGridColLeft() || s.getX() == d.getGridColRight());
+
+        // 2. Il Sopravvissuto ha la chiave? 
+        // ⚠️ Qui sto usando s.hasKey(). Assicurati che nel tuo Survivor.java il metodo si chiami così!
+        boolean hasKey = s.hasKey();
+
+        // Ritorna true SOLO SE entrambe le condizioni sono vere!
+        return isOnDoor && hasKey; 
     }
 
     public GameState getCurrentState() { return currentState; }

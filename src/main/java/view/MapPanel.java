@@ -227,6 +227,35 @@ public class MapPanel extends JPanel {
             g.drawRect(cursorDrawX, cursorDrawY, DEST_TILE_SIZE, DEST_TILE_SIZE);
             g.drawRect(cursorDrawX + 1, cursorDrawY + 1, DEST_TILE_SIZE - 2, DEST_TILE_SIZE - 2); 
         }
+        // ==========================================
+        // NOTIFICA VISIVA DI VITTORIA (NP-32)
+        // ==========================================
+        if (turnController != null && turnController.getCurrentState() == GameState.SURVIVOR_VICTORY) {
+            
+            // Disegniamo un velo scuro semitrasparente sopra tutta la mappa
+            g.setColor(new Color(0, 0, 0, 180));
+            g.fillRect(0, 0, getWidth(), getHeight());
+
+            // Prepariamo la scritta della vittoria!
+            String messaggio = "IL SOPRAVVISSUTO HA VINTO!";
+            
+            // Un bel font grande
+            java.awt.Font fontVittoria = new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 36);
+            g.setFont(fontVittoria);
+            
+            // Calcoliamo il centro esatto dello schermo per la scritta
+            java.awt.FontMetrics metrics = g.getFontMetrics(fontVittoria);
+            int xTesto = (getWidth() - metrics.stringWidth(messaggio)) / 2;
+            int yTesto = (getHeight() / 2);
+
+            // Facciamo un'ombra nera per farla spiccare di più
+            g.setColor(Color.BLACK);
+            g.drawString(messaggio, xTesto + 3, yTesto + 3);
+            
+            // Scritta in colore Oro
+            g.setColor(new Color(255, 215, 0)); 
+            g.drawString(messaggio, xTesto, yTesto);
+        }
     }
 
     public BufferedImage getTileset() { return tileset; }
