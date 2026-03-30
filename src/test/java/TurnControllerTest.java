@@ -76,4 +76,25 @@ public class TurnControllerTest {
         // Assert 2: Solo ora si passa al turno dello Zombie!
         assertEquals(TurnController.GameState.P2_CHOICE, turnController.getCurrentState(), "Ora tocca a P2 (Zombie)");
     }
+
+    @Test
+    public void testZombieVictoryOnCollision() {
+        // Arrange: Avviamo il gioco
+        turnController.startGame();
+        
+        // Spostiamo lo zombie artificialmente a un passo dal Sopravvissuto (che in setUp è a 2,2)
+        zombie.setX(3);
+        zombie.setY(2);
+
+        // Act 1: Il Sopravvissuto passa il turno stando fermo
+        turnController.confirmMove(2, 2);
+        turnController.confirmBlock(2, 2);
+
+        // Act 2: Lo Zombie si muove esattamente sulle coordinate (2, 2) del Sopravvissuto e si blocca
+        turnController.confirmMove(2, 2);
+        turnController.confirmBlock(2, 2);
+
+        // Assert: Dopo la risoluzione del turno, l'arbitro deve dichiarare la vittoria dello Zombie!
+        assertEquals(TurnController.GameState.ZOMBIE_VICTORY, turnController.getCurrentState(), "Lo Zombie deve vincere se finisce sulla stessa casella del Sopravvissuto!");
+    }
 }

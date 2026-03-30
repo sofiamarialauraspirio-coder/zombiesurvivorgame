@@ -170,7 +170,7 @@ public class MapPanel extends JPanel {
         boolean canShowIndicators = true; 
         if (turnController != null) {
             GameState state = turnController.getCurrentState();
-            if (state == GameState.MENU || state == GameState.RESOLUTION || state == GameState.END_GAME) {
+            if (state == GameState.MENU || state == GameState.RESOLUTION || state == GameState.END_GAME || state == GameState.ZOMBIE_VICTORY) {
                 canShowIndicators = false;
             }
         }
@@ -212,6 +212,15 @@ public class MapPanel extends JPanel {
             g.setColor(Color.BLACK);
             g.drawRect(dx, dy, DEST_TILE_SIZE * 2, DEST_TILE_SIZE);
         }
+        
+        // --- HIGHLIGHT COLLISIONE ZOMBIE (Se lo Zombie ha vinto, disegna un cerchio/quadrato di sangue sotto di loro) ---
+        if (turnController != null && turnController.getCurrentState() == GameState.ZOMBIE_VICTORY) {
+            int collisionX = map.getZombie().getX() * DEST_TILE_SIZE;
+            int collisionY = map.getZombie().getY() * DEST_TILE_SIZE;
+            g.setColor(new Color(150, 0, 0, 200)); // Rosso scuro sangue
+            g.fillRect(collisionX, collisionY, DEST_TILE_SIZE, DEST_TILE_SIZE);
+        }
+
         if (map.getZombie() != null && zombieImage != null) {
             g.drawImage(zombieImage, map.getZombie().getX() * DEST_TILE_SIZE, map.getZombie().getY() * DEST_TILE_SIZE, DEST_TILE_SIZE, DEST_TILE_SIZE, null);
         }
@@ -227,33 +236,51 @@ public class MapPanel extends JPanel {
             g.drawRect(cursorDrawX, cursorDrawY, DEST_TILE_SIZE, DEST_TILE_SIZE);
             g.drawRect(cursorDrawX + 1, cursorDrawY + 1, DEST_TILE_SIZE - 2, DEST_TILE_SIZE - 2); 
         }
+        
         // ==========================================
-        // NOTIFICA VISIVA DI VITTORIA (NP-32)
+        // NOTIFICHE VISIVE DI VITTORIA 
         // ==========================================
+        
+        // 🏆 VITTORIA SOPRAVVISSUTO
         if (turnController != null && turnController.getCurrentState() == GameState.SURVIVOR_VICTORY) {
             
-            // Disegniamo un velo scuro semitrasparente sopra tutta la mappa
             g.setColor(new Color(0, 0, 0, 180));
             g.fillRect(0, 0, getWidth(), getHeight());
 
-            // Prepariamo la scritta della vittoria!
             String messaggio = "IL SOPRAVVISSUTO HA VINTO!";
-            
-            // Un bel font grande
             java.awt.Font fontVittoria = new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 36);
             g.setFont(fontVittoria);
             
-            // Calcoliamo il centro esatto dello schermo per la scritta
             java.awt.FontMetrics metrics = g.getFontMetrics(fontVittoria);
             int xTesto = (getWidth() - metrics.stringWidth(messaggio)) / 2;
             int yTesto = (getHeight() / 2);
 
-            // Facciamo un'ombra nera per farla spiccare di più
             g.setColor(Color.BLACK);
             g.drawString(messaggio, xTesto + 3, yTesto + 3);
+            g.setColor(new Color(255, 215, 0)); // Oro
+            g.drawString(messaggio, xTesto, yTesto);
+        }
+        
+        // 🧟‍♂️ VITTORIA ZOMBIE
+        else if (turnController != null && turnController.getCurrentState() == GameState.ZOMBIE_VICTORY) {
             
-            // Scritta in colore Oro
-            g.setColor(new Color(255, 215, 0)); 
+            // Schermo rosso sangue
+            g.setColor(new Color(100, 0, 0, 190));
+            g.fillRect(0, 0, getWidth(), getHeight());
+
+            String messaggio = "LO ZOMBIE HA VINTO!";
+            java.awt.Font fontVittoria = new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 42);
+            g.setFont(fontVittoria);
+            
+            java.awt.FontMetrics metrics = g.getFontMetrics(fontVittoria);
+            int xTesto = (getWidth() - metrics.stringWidth(messaggio)) / 2;
+            int yTesto = (getHeight() / 2);
+
+            // Ombra per far spiccare il testo
+            g.setColor(Color.BLACK);
+            g.drawString(messaggio, xTesto + 3, yTesto + 3);
+            // Scritta in bianco
+            g.setColor(Color.WHITE);
             g.drawString(messaggio, xTesto, yTesto);
         }
     }
