@@ -41,6 +41,7 @@ public class MainMenu extends JPanel {
                 public void mouseExited(MouseEvent evt) { hovered = false; repaint(); }
             });
         }
+        
         @Override
         protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();

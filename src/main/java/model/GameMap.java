@@ -15,6 +15,7 @@ public class GameMap {
     
     // I nostri oggetti speciali!
     private Key key;
+    private java.util.List<Crate> crates = new java.util.ArrayList<>();
     private Door door;
     private Zombie zombie;     
     private Survivor survivor;
@@ -116,5 +117,55 @@ public class GameMap {
         if (isWalkable(startY, startX + 1)) validMoves.add(new Point(startX + 1, startY)); // DESTRA
 
         return validMoves;
+    }
+
+    public void addCrate(Crate crate) {
+        this.crates.add(crate);
+    }
+
+    public java.util.List<Crate> getCrates() {
+        return this.crates;
+    }
+
+    public void removeCrate(Crate crate) {
+        this.crates.remove(crate);
+    }
+
+    public void spawnRandomCrate() {
+        // 1. Controllo Limite: Se ci sono già 2 (o più) casse, fermati subito!
+        if (this.crates.size() >= 2) {
+            return;
+        }
+
+        java.util.Random random = new java.util.Random();
+        boolean posizioneTrovata = false;
+        int tentativi = 0; // Per sicurezza, evitiamo loop infiniti se la mappa è minuscola
+
+        while (!posizioneTrovata && tentativi < 100) {
+            // Scegliamo una coordinata X e Y a caso all'interno della mappa
+            int randomX = random.nextInt(getCols());
+            int randomY = random.nextInt(getRows());
+
+            // 2. Controllo Pavimento: È una zona calpestabile? (Attenzione: isWalkable di solito vuole Y e poi X)
+            if (isWalkable(randomY, randomX)) {
+                
+                // 3. Controllo Sovrapposizione: C'è già un'altra cassa qui?
+                boolean cellaLibera = true;
+                for (Crate c : crates) {
+                    if (c.getX() == randomX && c.getY() == randomY) {
+                        cellaLibera = false;
+                        break;
+                    }
+                }
+
+                // Se la cella è calpestabile e non c'è una cassa... BOOM! Spawn!
+                if (cellaLibera) {
+                    addCrate(new Crate(randomX, randomY));
+                    posizioneTrovata = true;
+                    System.out.println("🎲 Nuova cassa apparsa casualmente in (" + randomX + ", " + randomY + ")!");
+                }
+            }
+            tentativi++;
+        }
     }
 }
