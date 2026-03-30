@@ -38,8 +38,8 @@ public class MovementTest {
         int startY = 5;
 
         // Simuliamo un muro esattamente a NORD del sopravvissuto (Y - 1)
-        // Nel tuo GameMap, TILE_WALL è 2, quindi passiamo 2!
-        int wallId = 2; 
+        // FIX: Invece di usare "2", chiediamo alla mappa qual è il vero ID del muro (287)
+        int wallId = model.GameMap.TILE_WALL; 
         map.setTile(startY - 1, startX, wallId); 
 
         // Act

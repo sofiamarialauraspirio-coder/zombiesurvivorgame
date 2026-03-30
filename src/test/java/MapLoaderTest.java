@@ -2,8 +2,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 import model.GameMap;
-import model.MapLoader;
-import model.Key; 
+import model.MapLoader; 
 import model.Survivor; // <-- NUOVO IMPORT per il Sopravvissuto!
 
 public class MapLoaderTest {
@@ -54,7 +53,7 @@ public class MapLoaderTest {
 
         // 3. SIMULIAMO LA RACCOLTA: Il sopravvissuto prende la chiave e sparisce dalla mappa
         if (map.getKey() != null) {
-            survivor.pickUpKey();
+            survivor.collectKey();
             map.setKey(null);
         }
 
