@@ -167,6 +167,23 @@ public class MapPanel extends JPanel {
             }
         }
 
+        if (map.getCrates() != null) {
+            for (model.Crate cassa : map.getCrates()) {
+                int drawX = cassa.getX() * DEST_TILE_SIZE;
+                int drawY = cassa.getY() * DEST_TILE_SIZE;
+                
+                // Disegniamo una bella cassa di legno (Marrone)
+                g.setColor(new Color(205, 133, 63)); // Colore marrone chiaro
+                g.fillRect(drawX, drawY, DEST_TILE_SIZE, DEST_TILE_SIZE);
+                
+                // Bordo scuro e una "X" sopra per farla sembrare una vera cassa
+                g.setColor(new Color(139, 69, 19)); // Colore marrone scuro
+                g.drawRect(drawX, drawY, DEST_TILE_SIZE, DEST_TILE_SIZE);
+                g.drawLine(drawX, drawY, drawX + DEST_TILE_SIZE, drawY + DEST_TILE_SIZE);
+                g.drawLine(drawX + DEST_TILE_SIZE, drawY, drawX, drawY + DEST_TILE_SIZE);
+            }
+        }
+
         boolean canShowIndicators = true; 
         if (turnController != null) {
             GameState state = turnController.getCurrentState();

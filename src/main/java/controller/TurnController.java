@@ -102,6 +102,26 @@ public class TurnController {
         
         gameManager.resolveGlobalTurn();
         
+        java.util.List<model.Crate> casseDaRimuovere = new java.util.ArrayList<>();
+        
+        for (model.Crate cassa : gameMap.getCrates()) {
+            boolean survivorSullaCassa = (gameMap.getSurvivor().getX() == cassa.getX() && gameMap.getSurvivor().getY() == cassa.getY());
+            boolean zombieSullaCassa = (gameMap.getZombie().getX() == cassa.getX() && gameMap.getZombie().getY() == cassa.getY());
+            
+            // Se almeno uno dei due è finito sulla cassa (o entrambi simultaneamente)
+            if (survivorSullaCassa || zombieSullaCassa) {
+                casseDaRimuovere.add(cassa);
+                System.out.println("📦 CASSA DISTRUTTA/RACCOLTA in (" + cassa.getX() + ", " + cassa.getY() + ")!");
+            }
+        }
+        
+        // Rimuoviamo fisicamente le casse dalla mappa (Logical Removal)
+        for (model.Crate c : casseDaRimuovere) {
+            gameMap.removeCrate(c);
+        }
+        
+        gameMap.spawnRandomCrate();
+        
         if (gameMap.getKey() != null) {
             int keyGridX = gameMap.getKey().getX() / 64;
             int keyGridY = gameMap.getKey().getY() / 64;
@@ -120,9 +140,6 @@ public class TurnController {
 
         System.out.println("📍 FINE TURNO -> Sopravvissuto è a: (" + gameMap.getSurvivor().getX() + ", " + gameMap.getSurvivor().getY() + ") | Zombie è a: (" + gameMap.getZombie().getX() + ", " + gameMap.getZombie().getY() + ")");
 
-        // --- 🟢 INIZIO CONTROLLO VITTORIE ---
-        
-        // PRIORITÀ 1: Lo Zombie mangia il Sopravvissuto
         if (gameMap.getSurvivor().getX() == gameMap.getZombie().getX() && 
             gameMap.getSurvivor().getY() == gameMap.getZombie().getY()) {
             
@@ -156,7 +173,6 @@ public class TurnController {
             
             System.out.println("🔄 Nuovo turno iniziato! Tocca di nuovo a P1.");
         }
-        // --- FINE CONTROLLO VITTORIE ---
     }
 
     private boolean checkVictoryCondition() {
