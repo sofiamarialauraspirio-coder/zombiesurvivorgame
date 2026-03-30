@@ -9,9 +9,6 @@ public class TurnController {
     private GameMap gameMap;
     private MapPanel mapPanel;
 
-    // ==========================================
-    // NP-32: Aggiunto stato SURVIVOR_VICTORY
-    // ==========================================
     public enum GameState { MENU, P1_CHOICE, P2_CHOICE, RESOLUTION, SURVIVOR_VICTORY, END_GAME }
     private GameState currentState;
 
@@ -20,7 +17,6 @@ public class TurnController {
     private boolean p2HasMoved = false;
     private boolean p2HasBlocked = false; 
     
-    // L'arbitro ricorda chi hai scelto come P1!
     private boolean survivorIsP1 = true; 
 
     public TurnController(GameManager gameManager, GameMap gameMap) {
@@ -32,16 +28,29 @@ public class TurnController {
     public void setMapPanel(MapPanel mapPanel) { this.mapPanel = mapPanel; }
     public void setSurvivorIsP1(boolean isP1) { this.survivorIsP1 = isP1; }
 
-    // Capisce di chi è il turno in modo dinamico
     public boolean isSurvivorTurn() {
         if (currentState == GameState.P1_CHOICE) return survivorIsP1;
         if (currentState == GameState.P2_CHOICE) return !survivorIsP1;
         return false;
     }
 
+    // ==========================================================
+    // STORY 32: TRANSITION LOGIC E ROBUSTNESS
+    // ==========================================================
+    private void changeState(GameState newState) {
+        // ROBUSTNESS: Impediamo transizioni illegali (es. da MENU direttamente a RESOLUTION)
+        if (this.currentState == GameState.MENU && (newState == GameState.RESOLUTION || newState == GameState.P2_CHOICE)) {
+            System.err.println("❌ ERRORE: Transizione illegale da " + this.currentState + " a " + newState);
+            return;
+        }
+
+        System.out.println("🔄 State Machine: Cambio stato da [" + this.currentState + "] ➡️ [" + newState + "]");
+        this.currentState = newState;
+    }
+
     public void startGame() {
         if (currentState == GameState.MENU) {
-            currentState = GameState.P1_CHOICE;
+            changeState(GameState.P1_CHOICE); // Usiamo il nuovo metodo
         }
     }
 
@@ -74,14 +83,14 @@ public class TurnController {
 
     private void checkP1Finished() {
         if (p1HasMoved && p1HasBlocked) {
-            currentState = GameState.P2_CHOICE;
+            changeState(GameState.P2_CHOICE); // Usiamo il nuovo metodo
             if (mapPanel != null) mapPanel.clearIndicators();
         }
     }
 
     private void checkP2Finished() {
         if (p2HasMoved && p2HasBlocked) {
-            currentState = GameState.RESOLUTION;
+            changeState(GameState.RESOLUTION); // Usiamo il nuovo metodo
             if (mapPanel != null) mapPanel.clearIndicators();
             executeResolution();
         }
@@ -90,54 +99,34 @@ public class TurnController {
     private void executeResolution() {
         if (currentState == GameState.MENU || currentState == GameState.END_GAME || currentState == GameState.SURVIVOR_VICTORY) return; 
         
-        // 1. Risoluzione di scontri e calcolo mosse
         gameManager.resolveGlobalTurn();
         
         if (gameMap.getKey() != null) {
-            // Trasformiamo i pixel della chiave in coordinate della griglia (diviso 64)
             int keyGridX = gameMap.getKey().getX() / 64;
             int keyGridY = gameMap.getKey().getY() / 64;
             
-            // Controlliamo se il Sopravvissuto è esattamente sopra la chiave
             if (gameMap.getSurvivor().getX() == keyGridX && gameMap.getSurvivor().getY() == keyGridY) {
-                
-                // Attribute Update & Persistence
                 gameMap.getSurvivor().collectKey();
-                
-                // Entity Removal (Il MapPanel smetterà di disegnarla automaticamente!)
                 gameMap.setKey(null);
-                
                 System.out.println("🔑 IL SOPRAVVISSUTO HA RACCOLTO LA CHIAVE!");
             }
         }
         
-        // 2. Ridisegniamo la mappa con le nuove posizioni (e senza la chiave se raccolta!)
         if (mapPanel != null) mapPanel.repaint(); 
 
-        // 3. Resettiamo le variabili per il nuovo turno
         p1HasMoved = false; p1HasBlocked = false;
         p2HasMoved = false; p2HasBlocked = false;
 
-
-        // ==========================================================
-        // NP-32: CONTROLLO VITTORIA POST-RISOLUZIONE
-        // ==========================================================
         if (checkVictoryCondition()) {
-            currentState = GameState.SURVIVOR_VICTORY;
+            changeState(GameState.SURVIVOR_VICTORY); // Usiamo il nuovo metodo
             System.out.println("🏆 IL SOPRAVVISSUTO HA VINTO!");
             
-            // Ridisegniamo un'ultima volta per mostrare la schermata di vittoria sul MapPanel
             if (mapPanel != null) {
                 mapPanel.repaint();
             }
         } else {
-            // ==========================================================
-            // SE NON HA VINTO, CONTINUA IL GIOCO NORMALMENTE
-            // ==========================================================
-            // 4. Passiamo la palla di nuovo al Giocatore 1
-            currentState = GameState.P1_CHOICE;
+            changeState(GameState.P1_CHOICE); // Usiamo il nuovo metodo
 
-            // 5. Generiamo le mosse gialle per il NUOVO turno!
             if (mapPanel != null) {
                 if (survivorIsP1) {
                     mapPanel.evidenziaMossePersonaggio(gameMap.getSurvivor().getX(), gameMap.getSurvivor().getY());
@@ -150,9 +139,6 @@ public class TurnController {
         }
     }
 
-    // ==========================================================
-    // NP-32: REQUISITI DI VITTORIA 
-    // ==========================================================
     private boolean checkVictoryCondition() {
         if (gameMap == null || gameMap.getSurvivor() == null || gameMap.getDoor() == null) {
             return false;
@@ -161,15 +147,11 @@ public class TurnController {
         model.Survivor s = gameMap.getSurvivor();
         model.Door d = gameMap.getDoor();
 
-        // 1. Il Sopravvissuto è su una delle due caselle della porta?
         boolean isOnDoor = (s.getY() == d.getGridRow()) && 
                            (s.getX() == d.getGridColLeft() || s.getX() == d.getGridColRight());
 
-        // 2. Il Sopravvissuto ha la chiave? 
-        // ⚠️ Qui sto usando s.hasKey(). Assicurati che nel tuo Survivor.java il metodo si chiami così!
         boolean hasKey = s.hasKey();
 
-        // Ritorna true SOLO SE entrambe le condizioni sono vere!
         return isOnDoor && hasKey; 
     }
 

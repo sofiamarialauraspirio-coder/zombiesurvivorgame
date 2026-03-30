@@ -38,8 +38,8 @@ public class TurnControllerTest {
         // Act: Il giocatore prova a muoversi mentre è nel MENU
         turnController.confirmMove(1, 0);
 
-        // Assert: Input Protection! La mossa deve essere scartata
-        assertFalse(survivor.hasPlannedMove(), "Non deve essere possibile muoversi dal MENU");
+        // Assert: Input Protection! La mossa deve essere scartata (usiamo assertNull!)
+        assertNull(survivor.getPlannedMove(), "Non deve essere possibile muoversi dal MENU");
         assertEquals(TurnController.GameState.MENU, turnController.getCurrentState(), "Lo stato non deve cambiare");
     }
 
@@ -53,7 +53,7 @@ public class TurnControllerTest {
         turnController.confirmMove(1, 0);
 
         // Assert: La mossa fallisce e lo stato NON avanza
-        assertFalse(survivor.hasPlannedMove(), "La mossa NON deve essere salvata");
+        assertNull(survivor.getPlannedMove(), "La mossa NON deve essere salvata");
         assertEquals(TurnController.GameState.P1_CHOICE, turnController.getCurrentState(), "Dobbiamo rimanere in P1_CHOICE");
     }
 
@@ -66,8 +66,8 @@ public class TurnControllerTest {
         // Act 1: P1 conferma SOLO la mossa
         turnController.confirmMove(1, 0);
 
-        // Assert 1: Il turno NON deve ancora passare a P2
-        assertTrue(survivor.hasPlannedMove());
+        // Assert 1: Il turno NON deve ancora passare a P2 (usiamo assertNotNull!)
+        assertNotNull(survivor.getPlannedMove(), "La mossa deve essere salvata");
         assertEquals(TurnController.GameState.P1_CHOICE, turnController.getCurrentState(), "Serve anche il Block per passare il turno!");
 
         // Act 2: P1 conferma anche l'azione (Block)
