@@ -24,12 +24,12 @@ public class GameManager {
         boolean cancelSurvivorMove = false;
         boolean cancelZombieMove = false;
 
-        // 2. CONFLICT RESOLUTION (Collision)
+        // 2. CONFLICT RESOLUTION (Collision) - MODIFICATO PER VITTORIA ZOMBIE
         // Se entrambi hanno provato a muoversi sulla STESSA casella
         if (sMove != null && zMove != null && sMove.equals(zMove)) {
-            System.out.println("⚔️ COLLISIONE! Entrambi hanno mirato alla stessa casella. Mosse annullate.");
-            cancelSurvivorMove = true;
-            cancelZombieMove = true;
+            System.out.println("⚔️ SCONTRO FRONTALE! Entrambi saltano sulla stessa casella! (E lo Zombie si prepara al banchetto 🥩)");
+            // NON ANNULLIAMO PIÙ LE MOSSE! 
+            // Lasciamo che il movimento avvenga, così le coordinate coincideranno e l'Arbitro dichiarerà ZOMBIE_VICTORY.
         }
 
         // 3. CONFLICT RESOLUTION (Blocking)

@@ -9,7 +9,7 @@ public class TurnController {
     private GameMap gameMap;
     private MapPanel mapPanel;
 
-    public enum GameState { MENU, P1_CHOICE, P2_CHOICE, RESOLUTION, SURVIVOR_VICTORY, END_GAME }
+    public enum GameState { MENU, P1_CHOICE, P2_CHOICE, RESOLUTION, SURVIVOR_VICTORY, ZOMBIE_VICTORY, END_GAME }
     private GameState currentState;
 
     private boolean p1HasMoved = false;
@@ -97,7 +97,8 @@ public class TurnController {
     }
 
     private void executeResolution() {
-        if (currentState == GameState.MENU || currentState == GameState.END_GAME || currentState == GameState.SURVIVOR_VICTORY) return; 
+        // 1. Aggiunto ZOMBIE_VICTORY qui per bloccare il gioco quando finisce
+        if (currentState == GameState.MENU || currentState == GameState.END_GAME || currentState == GameState.SURVIVOR_VICTORY || currentState == GameState.ZOMBIE_VICTORY) return; 
         
         gameManager.resolveGlobalTurn();
         
@@ -117,15 +118,33 @@ public class TurnController {
         p1HasMoved = false; p1HasBlocked = false;
         p2HasMoved = false; p2HasBlocked = false;
 
-        if (checkVictoryCondition()) {
-            changeState(GameState.SURVIVOR_VICTORY); // Usiamo il nuovo metodo
+        System.out.println("📍 FINE TURNO -> Sopravvissuto è a: (" + gameMap.getSurvivor().getX() + ", " + gameMap.getSurvivor().getY() + ") | Zombie è a: (" + gameMap.getZombie().getX() + ", " + gameMap.getZombie().getY() + ")");
+
+        // --- 🟢 INIZIO CONTROLLO VITTORIE ---
+        
+        // PRIORITÀ 1: Lo Zombie mangia il Sopravvissuto
+        if (gameMap.getSurvivor().getX() == gameMap.getZombie().getX() && 
+            gameMap.getSurvivor().getY() == gameMap.getZombie().getY()) {
+            
+            changeState(GameState.ZOMBIE_VICTORY);
+            System.out.println("🧟‍♂️ LO ZOMBIE HA MANGIATO IL SOPRAVVISSUTO! HA VINTO!");
+            
+            if (mapPanel != null) {
+                mapPanel.repaint();
+            }
+        } 
+        // PRIORITÀ 2: Il Sopravvissuto scappa (viene controllato SOLO se lo Zombie non l'ha mangiato)
+        else if (checkVictoryCondition()) {
+            changeState(GameState.SURVIVOR_VICTORY); 
             System.out.println("🏆 IL SOPRAVVISSUTO HA VINTO!");
             
             if (mapPanel != null) {
                 mapPanel.repaint();
             }
-        } else {
-            changeState(GameState.P1_CHOICE); // Usiamo il nuovo metodo
+        } 
+        // NESSUNA VITTORIA: Il gioco continua al prossimo turno
+        else {
+            changeState(GameState.P1_CHOICE); 
 
             if (mapPanel != null) {
                 if (survivorIsP1) {
@@ -137,6 +156,7 @@ public class TurnController {
             
             System.out.println("🔄 Nuovo turno iniziato! Tocca di nuovo a P1.");
         }
+        // --- FINE CONTROLLO VITTORIE ---
     }
 
     private boolean checkVictoryCondition() {
