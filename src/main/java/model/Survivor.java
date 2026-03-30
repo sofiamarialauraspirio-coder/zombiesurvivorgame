@@ -49,4 +49,9 @@ public class Survivor {
     public boolean hasKey() {
         return this.hasKey;
     }
+
+    // Metodo per il Reset del gioco (NP-34)
+    public void dropKey() {
+        this.hasKey = false;
+    }
 }
