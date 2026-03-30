@@ -37,7 +37,7 @@ public class TurnController {
     // ==========================================================
     // STORY 32: TRANSITION LOGIC E ROBUSTNESS
     // ==========================================================
-    private void changeState(GameState newState) {
+    public void changeState(GameState newState) {
         // ROBUSTNESS: Impediamo transizioni illegali (es. da MENU direttamente a RESOLUTION)
         if (this.currentState == GameState.MENU && (newState == GameState.RESOLUTION || newState == GameState.P2_CHOICE)) {
             System.err.println("❌ ERRORE: Transizione illegale da " + this.currentState + " a " + newState);
@@ -194,4 +194,34 @@ public class TurnController {
     public GameState getCurrentState() { return currentState; }
     public void setP1HasBlocked(boolean b) { this.p1HasBlocked = b; }
     public void setP2HasBlocked(boolean b) { this.p2HasBlocked = b; }
+
+    // ==========================================
+    // STORY 27: END SCREEN AND RESET (NP-34)
+    // ==========================================
+    public void resetGame() {
+        // 1. Ripristiniamo le variabili di turno base
+        p1HasMoved = false; p1HasBlocked = false;
+        p2HasMoved = false; p2HasBlocked = false;
+
+        // 2. Cancelliamo i "fantasmi" delle mosse precedenti e togliamo la chiave
+        if (gameMap.getSurvivor() != null) {
+            gameMap.getSurvivor().cancelPlannedMove();
+            gameMap.getSurvivor().cancelPlannedBlock();
+            gameMap.getSurvivor().dropKey();
+        }
+        if (gameMap.getZombie() != null) {
+            gameMap.getZombie().cancelPlannedMove();
+            gameMap.getZombie().cancelPlannedBlock();
+        }
+
+        // 3. Spazziamo via tutte le casse rimanenti dalla mappa
+        if (gameMap.getCrates() != null) {
+            gameMap.getCrates().clear();
+        }
+
+        // 4. Riportiamo lo stato ufficiale al Menu
+        changeState(GameState.MENU);
+        
+        System.out.println("🧹 GIOCO RESETTATO CON SUCCESSO! La memoria è pulita.");
+    }
 }

@@ -36,8 +36,58 @@ public class MapPanel extends JPanel {
     private final int SOURCE_TILE_SIZE = 64;
     private final int DEST_TILE_SIZE = 48;
 
+    private javax.swing.JButton btnMenu;
+    private javax.swing.JButton btnQuit;
+
     public MapPanel(GameMap map) {
         this.map = map;
+
+        // Permette di muovere i bottoni liberamente sulla mappa
+        this.setLayout(null); 
+
+        // Creiamo i bottoni veri
+        btnMenu = new javax.swing.JButton("Main Menu");
+        btnQuit = new javax.swing.JButton("Quit");
+
+        // Stile dei bottoni (scuro con testo bianco, senza bordini strani)
+        java.awt.Font fontBottoni = new java.awt.Font("Arial", java.awt.Font.BOLD, 18);
+        btnMenu.setFont(fontBottoni);
+        btnMenu.setBackground(new Color(50, 50, 50));
+        btnMenu.setForeground(Color.WHITE);
+        btnMenu.setFocusPainted(false);
+
+        btnQuit.setFont(fontBottoni);
+        btnQuit.setBackground(new Color(50, 50, 50));
+        btnQuit.setForeground(Color.WHITE);
+        btnQuit.setFocusPainted(false);
+
+        // All'inizio della partita devono essere invisibili
+        btnMenu.setVisible(false);
+        btnQuit.setVisible(false);
+
+        // Cosa succede se clicco "Quit"?
+        btnQuit.addActionListener(e -> System.exit(0));
+
+        // Cosa succede se clicco "Main Menu"?
+        btnMenu.addActionListener(e -> {
+            if (turnController != null) turnController.resetGame();
+            java.awt.Window window = javax.swing.SwingUtilities.getWindowAncestor(MapPanel.this);
+            if (window instanceof javax.swing.JFrame) {
+                javax.swing.JFrame frame = (javax.swing.JFrame) window;
+                frame.setContentPane(new view.MainMenu(frame, new model.GameSession()));
+
+                frame.setSize(800, 500); // Riporta la finestra alla grandezza originale del menu
+                frame.setLocationRelativeTo(null); // La ricentra perfettamente sullo schermo
+
+                frame.revalidate();
+                frame.repaint();
+            }
+        });
+
+        // Aggiungiamo fisicamente i bottoni allo schermo
+        this.add(btnMenu);
+        this.add(btnQuit);
+
         caricaTileset();
         setPreferredSize(new Dimension(map.getCols() * DEST_TILE_SIZE, map.getRows() * DEST_TILE_SIZE));
 
@@ -105,7 +155,8 @@ public class MapPanel extends JPanel {
                 repaint();
             }
         });
-    }
+
+    } // <--- QUESTA È LA PARENTESI CHE CHIUDE IL COSTRUTTORE MapPanel(...)
 
     private void calcolaCaselleBlocco() {
         validBlocks.clear();
@@ -300,7 +351,34 @@ public class MapPanel extends JPanel {
             g.setColor(Color.WHITE);
             g.drawString(messaggio, xTesto, yTesto);
         }
-    }
+
+        // ==========================================
+        // MOSTRA I BOTTONI VERI A FINE PARTITA
+        // ==========================================
+        if (turnController != null && 
+           (turnController.getCurrentState() == GameState.SURVIVOR_VICTORY || 
+            turnController.getCurrentState() == GameState.ZOMBIE_VICTORY)) {
+            
+            // Accendiamo i bottoni e li posizioniamo al centro
+            if (!btnMenu.isVisible()) {
+                int centerX = getWidth() / 2;
+                int btnY = getHeight() / 2 + 50; 
+                
+                btnMenu.setBounds(centerX - 160, btnY, 140, 40);
+                btnQuit.setBounds(centerX + 20, btnY, 140, 40);
+                
+                btnMenu.setVisible(true);
+                btnQuit.setVisible(true);
+            }
+        } else {
+            // Se il gioco si resetta e riparte, rinascondiamo i bottoni!
+            if (btnMenu != null && btnMenu.isVisible()) {
+                btnMenu.setVisible(false);
+                btnQuit.setVisible(false);
+            }
+        }
+
+    } // <--- QUESTA È LA PARENTESI CHE CHIUDE IL METODO paintComponent(...)
 
     public BufferedImage getTileset() { return tileset; }
     public void evidenziaMossePersonaggio(int x, int y) {

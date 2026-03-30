@@ -155,4 +155,32 @@ public class TurnControllerTest {
         model.Crate nuovaCassa = gameMap.getCrates().get(1);
         assertTrue(gameMap.isWalkable(nuovaCassa.getY(), nuovaCassa.getX()), "ERRORE: La cassa deve spawnare sul pavimento, non sui muri!");
     }
+
+    @Test
+    public void testCleanStateReset() {
+        // Arrange: Iniziamo una partita e sporchiamo un po' i dati
+        turnController.startGame(); // Inizia il turno di P1
+        
+        // Facciamo fare delle mosse legali per sporcare la memoria
+        turnController.confirmMove(5, 5);  // Mossa P1
+        turnController.confirmBlock(5, 5); // Blocco P1 -> Passa a P2
+        turnController.confirmMove(6, 6);  // Mossa P2
+        
+        // Diamo la chiave al Sopravvissuto e aggiungiamo casse a caso
+        survivor.collectKey();
+        gameMap.addCrate(new model.Crate(1, 1));
+        
+        // Portiamo il gioco in uno stato di vittoria (ora possiamo farlo perché changeState è public!)
+        turnController.changeState(TurnController.GameState.SURVIVOR_VICTORY);
+
+        // Act: Chiamiamo il metodo magico per resettare tutto!
+        turnController.resetGame();
+
+        // Assert: Tutto deve essere tornato come nuovo!
+        assertNull(survivor.getPlannedMove(), "Le mosse del Sopravvissuto devono essere cancellate!");
+        assertNull(zombie.getPlannedMove(), "Le mosse dello Zombie devono essere cancellate!");
+        assertFalse(survivor.hasKey(), "Il Sopravvissuto NON deve più avere la chiave!");
+        assertTrue(gameMap.getCrates().isEmpty(), "Tutte le casse della vecchia partita devono sparire!");
+        assertEquals(TurnController.GameState.MENU, turnController.getCurrentState(), "Lo stato deve tornare al MENU!");
+    }
 }
