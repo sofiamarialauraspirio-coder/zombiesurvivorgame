@@ -50,7 +50,7 @@ public class TurnController {
 
     public void startGame() {
         if (currentState == GameState.MENU) {
-            changeState(GameState.P1_CHOICE); // Usiamo il nuovo metodo
+            changeState(GameState.P1_CHOICE); 
         }
     }
 
@@ -83,14 +83,14 @@ public class TurnController {
 
     private void checkP1Finished() {
         if (p1HasMoved && p1HasBlocked) {
-            changeState(GameState.P2_CHOICE); // Usiamo il nuovo metodo
+            changeState(GameState.P2_CHOICE); 
             if (mapPanel != null) mapPanel.clearIndicators();
         }
     }
 
     private void checkP2Finished() {
         if (p2HasMoved && p2HasBlocked) {
-            changeState(GameState.RESOLUTION); // Usiamo il nuovo metodo
+            changeState(GameState.RESOLUTION); 
             if (mapPanel != null) mapPanel.clearIndicators();
             executeResolution();
         }
@@ -120,7 +120,14 @@ public class TurnController {
             gameMap.removeCrate(c);
         }
         
-        gameMap.spawnRandomCrate();
+        // ==========================================================
+        // STORY: MAX CRATES LIMIT (Generation Bypass)
+        // ==========================================================
+        if (gameMap.getCrates().size() < model.CrateManager.MAX_CRATES) {
+            gameMap.spawnRandomCrate();
+        } else {
+            System.out.println("🛑 Limite massimo di " + model.CrateManager.MAX_CRATES + " casse raggiunto! Spawn saltato.");
+        }
         
         if (gameMap.getKey() != null) {
             int keyGridX = gameMap.getKey().getX() / 64;
