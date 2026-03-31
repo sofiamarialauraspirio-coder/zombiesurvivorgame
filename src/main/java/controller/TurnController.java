@@ -1,11 +1,14 @@
 package controller;
 
+import model.Entity;
 import model.GameManager;
 import model.GameMap;
 import model.Crate;
 import view.MapPanel; 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
+import javax.swing.JOptionPane;
 
 public class TurnController {
     private GameManager gameManager;
@@ -25,6 +28,9 @@ public class TurnController {
     private int turnsSinceLastEvent = 0; 
     private static final int SPAWN_INTERVAL = 3; 
 
+    // --- STORY 20: GENERATORE RANDOM ---
+    private Random random = new Random();
+
     public TurnController(GameManager gameManager, GameMap gameMap) {
         this.gameManager = gameManager;
         this.gameMap = gameMap;
@@ -40,14 +46,38 @@ public class TurnController {
         return false;
     }
 
-    // --- STORY 32: ROBUSTEZZA ---
+    // ==========================================================
+    // STORY 20: LOGICA DI SALTO TURNO AUTOMATICO (FREEZE)
+    // ==========================================================
     public void changeState(GameState newState) {
         if (this.currentState == GameState.MENU && (newState == GameState.RESOLUTION || newState == GameState.P2_CHOICE)) {
             System.err.println("❌ ERRORE: Transizione illegale da " + this.currentState + " a " + newState);
             return;
         }
-        System.out.println("🔄 State Machine: [" + this.currentState + "] ➡️ [" + newState + "]");
+        
         this.currentState = newState;
+        System.out.println("🔄 State Machine: [" + this.currentState + "]");
+
+        // Se entriamo nel turno del P1 e il P1 è congelato...
+        if (newState == GameState.P1_CHOICE) {
+            boolean p1Frozen = survivorIsP1 ? !gameManager.getSurvivor().canMove() : !gameManager.getZombie().canMove();
+            if (p1Frozen) {
+                System.out.println("❄️ P1 è congelato! Salta automaticamente al P2.");
+                p1HasMoved = true;
+                p1HasBlocked = true;
+                checkP1Finished(); 
+            }
+        } 
+        // Se entriamo nel turno del P2 e il P2 è congelato...
+        else if (newState == GameState.P2_CHOICE) {
+            boolean p2Frozen = survivorIsP1 ? !gameManager.getZombie().canMove() : !gameManager.getSurvivor().canMove();
+            if (p2Frozen) {
+                System.out.println("❄️ P2 è congelato! Salta automaticamente alla Risoluzione.");
+                p2HasMoved = true;
+                p2HasBlocked = true;
+                checkP2Finished(); 
+            }
+        }
     }
 
     public void startGame() {
@@ -102,9 +132,14 @@ public class TurnController {
         if (currentState == GameState.MENU || currentState == GameState.END_GAME || 
             currentState == GameState.SURVIVOR_VICTORY || currentState == GameState.ZOMBIE_VICTORY) return; 
         
+        // --- STORY 20: SCONGELAMENTO AUTOMATICO ---
+        // Prima di eseguire le nuove mosse, chi era congelato torna libero
+        gameManager.getSurvivor().resetMoveStatus();
+        gameManager.getZombie().resetMoveStatus();
+
         gameManager.resolveGlobalTurn();
         
-        // --- 1. RIMOZIONE CASSE E RESET TIMER ---
+        // --- 1. RIMOZIONE CASSE E GESTIONE BONUS ---
         List<Crate> casseDaRimuovere = new ArrayList<>();
         boolean raccoltaAvvenuta = false;
 
@@ -115,22 +150,35 @@ public class TurnController {
             if (sSuC || zSuC) {
                 casseDaRimuovere.add(cassa);
                 raccoltaAvvenuta = true;
+
+                // ==========================================================
+                // STORY 20: ASSEGNAZIONE BONUS (MODIFICATO PER TEST AL 100%)
+                // ==========================================================
+                if (true) { // <<< Cambia 'true' con 'random.nextInt(2) == 1' per tornare al 50%
+                    String picker = sSuC ? "Sopravvissuto" : "Zombie";
+                    String frozen = sSuC ? "Zombie" : "Sopravvissuto";
+
+                    // Applichiamo il congelamento all'avversario
+                    if (sSuC) gameManager.getZombie().setCanMove(false);
+                    if (zSuC) gameManager.getSurvivor().setCanMove(false);
+
+                    JOptionPane.showMessageDialog(null, 
+                        "STOP OPPONENT! L'avversario (" + frozen + ") è congelato e non potrà muoversi per 1 turno.", 
+                        "Bonus Attivato da " + picker + "!", 
+                        JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    System.out.println("💨 Cassa vuota...");
+                }
             }
         }
         
         for (Crate c : casseDaRimuovere) {
             gameMap.removeCrate(c);
-            System.out.println("📦 CASSA RACCOLTA! Timer resettato.");
         }
 
-        // --- 2. LOGICA TIMER (Reset se raccolta) ---
-        if (raccoltaAvvenuta) {
-            turnsSinceLastEvent = 0; 
-        } else {
-            turnsSinceLastEvent++;
-        }
-
-        System.out.println("⏳ Timer Cassa: " + turnsSinceLastEvent + "/3");
+        // --- 2. TIMER SPAWN ---
+        if (raccoltaAvvenuta) turnsSinceLastEvent = 0; 
+        else turnsSinceLastEvent++;
 
         if (turnsSinceLastEvent >= SPAWN_INTERVAL) {
             if (gameMap.getCrates().size() < 2) { 
@@ -139,14 +187,13 @@ public class TurnController {
             }
         }
         
-        // --- 3. LOGICA CHIAVE ---
+        // --- 3. CHIAVE ---
         if (gameMap.getKey() != null) {
             int kX = gameMap.getKey().getX() / 64;
             int kY = gameMap.getKey().getY() / 64;
             if (gameMap.getSurvivor().getX() == kX && gameMap.getSurvivor().getY() == kY) {
                 gameMap.getSurvivor().collectKey();
                 gameMap.setKey(null);
-                System.out.println("🔑 CHIAVE RACCOLTA!");
             }
         }
         
@@ -161,17 +208,12 @@ public class TurnController {
     private void checkFinalConditions() {
         if (gameMap.getSurvivor().getX() == gameMap.getZombie().getX() && 
             gameMap.getSurvivor().getY() == gameMap.getZombie().getY()) {
-            
             changeState(GameState.ZOMBIE_VICTORY);
-            System.out.println("🧟‍♂️ LO ZOMBIE HA VINTO!");
-            
         } else if (checkVictoryCondition()) {
-            
             changeState(GameState.SURVIVOR_VICTORY); 
-            System.out.println("🏆 IL SOPRAVVISSUTO HA VINTO!");
-            
         } else {
             changeState(GameState.P1_CHOICE); 
+            // Ripristino degli evidenziatori per il nuovo turno
             if (mapPanel != null) {
                 if (survivorIsP1) mapPanel.evidenziaMossePersonaggio(gameMap.getSurvivor().getX(), gameMap.getSurvivor().getY());
                 else mapPanel.evidenziaMossePersonaggio(gameMap.getZombie().getX(), gameMap.getZombie().getY());
@@ -192,27 +234,22 @@ public class TurnController {
     public void setP1HasBlocked(boolean b) { this.p1HasBlocked = b; }
     public void setP2HasBlocked(boolean b) { this.p2HasBlocked = b; }
 
-    // --- STORY 27: RESET TOTALE (PULITO) ---
     public void resetGame() {
         p1HasMoved = false; p1HasBlocked = false;
         p2HasMoved = false; p2HasBlocked = false;
         turnsSinceLastEvent = 0; 
-
         if (gameMap.getSurvivor() != null) {
             gameMap.getSurvivor().cancelPlannedMove();
             gameMap.getSurvivor().cancelPlannedBlock();
             gameMap.getSurvivor().dropKey();
+            gameManager.getSurvivor().resetMoveStatus();
         }
         if (gameMap.getZombie() != null) {
             gameMap.getZombie().cancelPlannedMove();
             gameMap.getZombie().cancelPlannedBlock();
+            gameManager.getZombie().resetMoveStatus();
         }
-
-        if (gameMap.getCrates() != null) {
-            gameMap.getCrates().clear();
-        }
-
+        if (gameMap.getCrates() != null) gameMap.getCrates().clear();
         changeState(GameState.MENU);
-        System.out.println("🧹 RESET COMPLETO EFFETTUATO.");
     }
 }
