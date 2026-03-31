@@ -135,13 +135,28 @@ public class GameMap {
     public void setTile(int row, int col, int tileId) { logicalMatrix[row][col] = tileId; }
     public int getTile(int row, int col) { return logicalMatrix[row][col]; }
 
-    public List<Point> getValidMoves(int startX, int startY, int maxDistance) {
-        List<Point> validMoves = new ArrayList<>();
-        if (isWalkable(startY - 1, startX)) validMoves.add(new Point(startX, startY - 1));
-        if (isWalkable(startY + 1, startX)) validMoves.add(new Point(startX, startY + 1));
-        if (isWalkable(startY, startX - 1)) validMoves.add(new Point(startX - 1, startY));
-        if (isWalkable(startY, startX + 1)) validMoves.add(new Point(startX + 1, startY));
-        return validMoves;
+   public List<Point> getValidMoves(int startX, int startY, int range) {
+        List<Point> valid = new ArrayList<>();
+        
+        for (int x = startX - range; x <= startX + range; x++) {
+            for (int y = startY - range; y <= startY + range; y++) {
+                // 1. Escludiamo il centro (il personaggio)
+                if (x == startX && y == startY) continue;
+                
+                // 2. FORMA A CROCE: Permettiamo solo caselle sulla stessa riga o colonna
+                if (x == startX || y == startY) {
+                    
+                    int distance = Math.abs(x - startX) + Math.abs(y - startY);
+                    
+                    if (distance <= range) {
+                        if (isWalkable(y, x)) { // y è la riga, x è la colonna
+                            valid.add(new Point(x, y));
+                        }
+                    }
+                }
+            }
+        }
+        return valid;
     }
 
     public void addCrate(Crate crate) { this.crates.add(crate); }

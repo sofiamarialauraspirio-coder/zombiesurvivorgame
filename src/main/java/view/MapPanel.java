@@ -95,55 +95,64 @@ public class MapPanel extends JPanel {
                 int keyCode = e.getKeyCode();
 
                 boolean survivorTurn = turnController.isSurvivorTurn();
-                Point activePos = survivorTurn ? new Point(map.getSurvivor().getX(), map.getSurvivor().getY()) 
-                                               : new Point(map.getZombie().getX(), map.getZombie().getY());
-                Point oppPos = survivorTurn ? new Point(map.getZombie().getX(), map.getZombie().getY()) 
-                                            : new Point(map.getSurvivor().getX(), map.getSurvivor().getY());
+                model.Entity activeEntity = survivorTurn ? map.getSurvivor() : map.getZombie();
+                model.Entity oppEntity = survivorTurn ? map.getZombie() : map.getSurvivor();
+
+                Point activePos = new Point(activeEntity.getX(), activeEntity.getY());
+                Point oppPos = new Point(oppEntity.getX(), oppEntity.getY());
 
                 Point centerRef = isChoosingBlock ? oppPos : activePos;
+                int currentRange = (!isChoosingBlock && activeEntity.hasDoubleMoveBonus()) ? 2 : 1;
                 
-                // =================================================================
-                // 🚀 STORY 21: CURSORE LIBERO PER DOPPIO MOVIMENTO
-                // Ora il cursore si muove partendo da sé stesso, non dal personaggio!
-                // =================================================================
                 Point basePos = (cursorPosition != null) ? cursorPosition : centerRef;
-                Point target = null;
+                Point target = new Point(basePos);
 
-                if (keyCode == KeyEvent.VK_UP) target = new Point(basePos.x, basePos.y - 1);
-                else if (keyCode == KeyEvent.VK_DOWN) target = new Point(basePos.x, basePos.y + 1);
-                else if (keyCode == KeyEvent.VK_LEFT) target = new Point(basePos.x - 1, basePos.y);
-                else if (keyCode == KeyEvent.VK_RIGHT) target = new Point(basePos.x + 1, basePos.y);
+                // =========================================================
+                // 🧲 FIX: CURSORE MAGNETICO!
+                // Si aggancia all'asse e salta il centro automaticamente.
+                // =========================================================
+                if (keyCode == KeyEvent.VK_UP) {
+                    target.x = centerRef.x; 
+                    target.y = basePos.y - 1;
+                    if (target.y == centerRef.y) target.y -= 1; // Salta il centro
+                }
+                else if (keyCode == KeyEvent.VK_DOWN) {
+                    target.x = centerRef.x;
+                    target.y = basePos.y + 1;
+                    if (target.y == centerRef.y) target.y += 1; // Salta il centro
+                }
+                else if (keyCode == KeyEvent.VK_LEFT) {
+                    target.y = centerRef.y;
+                    target.x = basePos.x - 1;
+                    if (target.x == centerRef.x) target.x -= 1; // Salta il centro
+                }
+                else if (keyCode == KeyEvent.VK_RIGHT) {
+                    target.y = centerRef.y;
+                    target.x = basePos.x + 1;
+                    if (target.x == centerRef.x) target.x += 1; // Salta il centro
+                }
 
-                if (target != null) {
-                    if (!isChoosingBlock && validMoves != null && validMoves.contains(target)) {
-                        cursorPosition = target;
-                    } else if (isChoosingBlock && validBlocks != null && validBlocks.contains(target)) {
+                if (keyCode == KeyEvent.VK_UP || keyCode == KeyEvent.VK_DOWN || 
+                    keyCode == KeyEvent.VK_LEFT || keyCode == KeyEvent.VK_RIGHT) {
+                    
+                    int dist = Math.abs(target.x - centerRef.x) + Math.abs(target.y - centerRef.y);
+                    if (dist <= currentRange) {
                         cursorPosition = target;
                     }
                 } 
                 else if (keyCode == KeyEvent.VK_ENTER) {
-                    if (!isChoosingBlock && cursorPosition != null && validMoves.contains(cursorPosition)) {
+                    if (!isChoosingBlock && cursorPosition != null && validMoves != null && validMoves.contains(cursorPosition)) {
                         turnController.confirmMove(cursorPosition.x, cursorPosition.y);
                         isChoosingBlock = true;
                         validMoves.clear(); 
                         calcolaCaselleBlocco(); 
-                        cursorPosition = null; 
+                        cursorPosition = null; // Il cursore sparirà fino a che non premi una freccia!
                     } 
-                    else if (isChoosingBlock && cursorPosition != null && validBlocks.contains(cursorPosition)) {
+                    else if (isChoosingBlock && cursorPosition != null && validBlocks != null && validBlocks.contains(cursorPosition)) {
                         turnController.confirmBlock(cursorPosition.x, cursorPosition.y);
                         isChoosingBlock = false;
                         validBlocks.clear();
                         cursorPosition = null; 
-                        
-                        if (turnController.getCurrentState() == GameState.P2_CHOICE) {
-                            boolean p2Survivor = turnController.isSurvivorTurn();
-                            Point p2Pos = p2Survivor ? new Point(map.getSurvivor().getX(), map.getSurvivor().getY()) 
-                                                     : new Point(map.getZombie().getX(), map.getZombie().getY());
-                            // Chiamiamo l'evidenziazione calcolando se P2 ha il bonus
-                            model.Entity p2Entity = p2Survivor ? map.getSurvivor() : map.getZombie();
-                            int p2Range = p2Entity.hasDoubleMoveBonus() ? 2 : 1;
-                            evidenziaMossePersonaggio(p2Pos.x, p2Pos.y, p2Range);
-                        }
                     }
                 }
                 repaint();
@@ -222,10 +231,6 @@ public class MapPanel extends JPanel {
                 } else {
                     g.setColor(new Color(205, 133, 63)); 
                     g.fillRect(drawX, drawY, DEST_TILE_SIZE, DEST_TILE_SIZE);
-                    g.setColor(new Color(139, 69, 19)); 
-                    g.drawRect(drawX, drawY, DEST_TILE_SIZE, DEST_TILE_SIZE);
-                    g.drawLine(drawX, drawY, drawX + DEST_TILE_SIZE, drawY + DEST_TILE_SIZE);
-                    g.drawLine(drawX + DEST_TILE_SIZE, drawY, drawX, drawY + DEST_TILE_SIZE);
                 }
             }
         }
@@ -272,8 +277,6 @@ public class MapPanel extends JPanel {
             int dy = map.getDoor().getGridRow() * DEST_TILE_SIZE;
             g.setColor(new Color(139, 69, 19)); 
             g.fillRect(dx, dy, DEST_TILE_SIZE * 2, DEST_TILE_SIZE);
-            g.setColor(Color.BLACK);
-            g.drawRect(dx, dy, DEST_TILE_SIZE * 2, DEST_TILE_SIZE);
         }
         
         if (turnController != null && turnController.getCurrentState() == GameState.ZOMBIE_VICTORY) {
@@ -290,10 +293,14 @@ public class MapPanel extends JPanel {
             g.drawImage(survivorImage, map.getSurvivor().getX() * DEST_TILE_SIZE, map.getSurvivor().getY() * DEST_TILE_SIZE, DEST_TILE_SIZE, DEST_TILE_SIZE, null);
         }
 
-        if (canShowIndicators && cursorPosition != null) {
+        if (canShowIndicators && cursorPosition != null && turnController != null) {
             int cursorDrawX = cursorPosition.x * DEST_TILE_SIZE;
             int cursorDrawY = cursorPosition.y * DEST_TILE_SIZE;
-            g.setColor(Color.CYAN);
+            
+            boolean isValid = (!isChoosingBlock && validMoves != null && validMoves.contains(cursorPosition)) || 
+                              (isChoosingBlock && validBlocks != null && validBlocks.contains(cursorPosition));
+            
+            g.setColor(isValid ? Color.CYAN : new Color(255, 0, 0, 150)); 
             g.drawRect(cursorDrawX, cursorDrawY, DEST_TILE_SIZE, DEST_TILE_SIZE);
             g.drawRect(cursorDrawX + 1, cursorDrawY + 1, DEST_TILE_SIZE - 2, DEST_TILE_SIZE - 2); 
         }
@@ -340,10 +347,8 @@ public class MapPanel extends JPanel {
             if (!btnMenu.isVisible()) {
                 int centerX = getWidth() / 2;
                 int btnY = getHeight() / 2 + 50; 
-                
                 btnMenu.setBounds(centerX - 160, btnY, 140, 40);
                 btnQuit.setBounds(centerX + 20, btnY, 140, 40);
-                
                 btnMenu.setVisible(true);
                 btnQuit.setVisible(true);
             }
@@ -355,19 +360,10 @@ public class MapPanel extends JPanel {
         }
     } 
 
-    public BufferedImage getTileset() { return tileset; }
-
-    // ==========================================
-    // 🚀 STORY 21: OVERLOAD DEL METODO EVIDENZIA
-    // ==========================================
-    
-    // Nuovo metodo che accetta anche il Range!
     public void evidenziaMossePersonaggio(int x, int y, int range) {
         java.util.List<java.awt.Point> mosse = map.getValidMoves(x, y, range);
         setValidMoves(mosse);
     }
-
-    // Vecchio metodo mantenuto per compatibilità, passa di default '1'
     public void evidenziaMossePersonaggio(int x, int y) {
         evidenziaMossePersonaggio(x, y, 1);
     }
