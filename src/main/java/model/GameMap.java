@@ -7,66 +7,87 @@ import java.nio.file.Paths;
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class GameMap {
     private int rows = 12;
     private int cols = 12;
     private int[][] logicalMatrix;
     
-    // I nostri oggetti speciali!
     private Key key;
-    private java.util.List<Crate> crates = new java.util.ArrayList<>();
+    private List<Crate> crates = new ArrayList<>();
     private Door door;
     private Zombie zombie;     
     private Survivor survivor;
 
-    // ==========================================
-    // AGGIORNAMENTO ID TILE (Basato sul file JSON Tiled)
-    // ==========================================
+    // ID del muro basato sul tuo tileset Tiled
     public static final int TILE_FLOOR = 1; 
-    public static final int TILE_WALL = 287; // <-- IL VERO ID DEL MURO!
+    public static final int TILE_WALL = 287; 
 
     public GameMap() {
         logicalMatrix = new int[rows][cols];
+        // NOTA: Il costruttore è vuoto. 
+        // NON chiamare spawnRandomCrate qui, altrimenti le casse appaiono subito!
     }
 
-    public int getRows() { return rows; }
-    public int getCols() { return cols; }
+    // ==========================================================
+    // STORY 17: SPAWN INTELLIGENTE (Anti-Sovrapposizione e Collisione)
+    // ==========================================================
+    public void spawnRandomCrate() {
+        // 1. Controllo limite massimo (Story precedente)
+        if (this.crates.size() >= CrateManager.MAX_CRATES) {
+            System.out.println("🛑 GameMap: Limite massimo raggiunto. Niente spawn.");
+            return;
+        }
 
-    public void setTile(int row, int col, int tileId) {
-        logicalMatrix[row][col] = tileId;
-    }
+        Random rand = new Random();
+        boolean spawned = false;
+        int tentativi = 0;
+        int maxTentativi = 100;
 
-    public int getTile(int row, int col) {
-        return logicalMatrix[row][col];
+        while (!spawned && tentativi < maxTentativi) {
+            int x = rand.nextInt(cols);
+            int y = rand.nextInt(rows);
+
+            // --- REQUISITI DI VALIDITÀ ---
+            // A. La cella deve essere calpestabile (no muri)
+            boolean walkable = isWalkable(y, x);
+            
+            // B. Non deve esserci il Sopravvissuto
+            boolean noSurvivor = (survivor != null && (survivor.getX() != x || survivor.getY() != y));
+            
+            // C. Non deve esserci lo Zombie
+            boolean noZombie = (zombie != null && (zombie.getX() != x || zombie.getY() != y));
+            
+            // D. ANTI-SOVRAPPOSIZIONE: Non deve esserci già un'altra cassa
+            boolean noOtherCrate = true;
+            for (Crate c : crates) {
+                if (c.getX() == x && c.getY() == y) {
+                    noOtherCrate = false;
+                    break;
+                }
+            }
+
+            // Se tutti i controlli passano, confermiamo lo spawn
+            if (walkable && noSurvivor && noZombie && noOtherCrate) {
+                crates.add(new Crate(x, y));
+                spawned = true;
+                System.out.println("🎁 GameMap: Nuova cassa spawnata in (" + x + ", " + y + ")");
+            }
+            tentativi++;
+        }
     }
 
     public boolean isWalkable(int row, int col) {
-        // 1. Controllo bordi logici dell'array
-        if (row < 0 || row >= rows || col < 0 || col >= cols) {
-            return false;
-        }
-        
-        // 2. Controllo Muri: Blocchiamo se è il muro di Tiled (287)
-        if (logicalMatrix[row][col] == TILE_WALL) {
-            return false;
-        }
+        if (row < 0 || row >= rows || col < 0 || col >= cols) return false;
+        if (logicalMatrix[row][col] == TILE_WALL) return false;
 
-        // ==========================================
-        // 3. CONTROLLO PORTA AGGIORNATO (NP-32)
-        // ==========================================
+        // Gestione Porta (NP-32)
         if (door != null) {
-            // Se stiamo controllando le coordinate della porta...
             if (row == door.getGridRow() && (col == door.getGridColLeft() || col == door.getGridColRight())) {
-                // ...e il Sopravvissuto ha la chiave, LO FACCIAMO PASSARE!
-                if (survivor != null && survivor.hasKey()) {
-                    return true; 
-                }
-                // Altrimenti, se non ha la chiave, rimane bloccato
-                return false; 
+                return (survivor != null && survivor.hasKey());
             }
         }
-
         return true; 
     }
 
@@ -74,7 +95,6 @@ public class GameMap {
         try {
             String content = new String(Files.readAllBytes(Paths.get(filePath)));
             JSONObject jsonObject = new JSONObject(content);
-            
             JSONArray layers = jsonObject.getJSONArray("layers");
             JSONObject firstLayer = layers.getJSONObject(0);
             JSONArray data = firstLayer.getJSONArray("data");
@@ -86,86 +106,37 @@ public class GameMap {
                     listIndex++;
                 }
             }
-            System.out.println("Mappa caricata con successo dal file: " + filePath);
-
+            System.out.println("Mappa caricata: " + filePath);
         } catch (Exception e) {
-            System.err.println("Errore: Impossibile leggere il file JSON!");
             e.printStackTrace();
         }
     }
 
     // --- GETTERS E SETTERS ---
+    public int getRows() { return rows; }
+    public int getCols() { return cols; }
     public Key getKey() { return key; }
     public void setKey(Key key) { this.key = key; }
-
     public Door getDoor() { return door; }
     public void setDoor(Door door) { this.door = door; }
-
     public Zombie getZombie() { return zombie; }
     public void setZombie(Zombie zombie) { this.zombie = zombie; }
-
     public Survivor getSurvivor() { return survivor; }
     public void setSurvivor(Survivor survivor) { this.survivor = survivor; }
+    public List<Crate> getCrates() { return crates; }
 
-    // --- LOGICA DI MOVIMENTO ---
+    public void setTile(int row, int col, int tileId) { logicalMatrix[row][col] = tileId; }
+    public int getTile(int row, int col) { return logicalMatrix[row][col]; }
+
     public List<Point> getValidMoves(int startX, int startY, int maxDistance) {
         List<Point> validMoves = new ArrayList<>();
-
-        if (isWalkable(startY - 1, startX)) validMoves.add(new Point(startX, startY - 1)); // SU
-        if (isWalkable(startY + 1, startX)) validMoves.add(new Point(startX, startY + 1)); // GIÙ
-        if (isWalkable(startY, startX - 1)) validMoves.add(new Point(startX - 1, startY)); // SINISTRA
-        if (isWalkable(startY, startX + 1)) validMoves.add(new Point(startX + 1, startY)); // DESTRA
-
+        if (isWalkable(startY - 1, startX)) validMoves.add(new Point(startX, startY - 1));
+        if (isWalkable(startY + 1, startX)) validMoves.add(new Point(startX, startY + 1));
+        if (isWalkable(startY, startX - 1)) validMoves.add(new Point(startX - 1, startY));
+        if (isWalkable(startY, startX + 1)) validMoves.add(new Point(startX + 1, startY));
         return validMoves;
     }
 
-    public void addCrate(Crate crate) {
-        this.crates.add(crate);
-    }
-
-    public java.util.List<Crate> getCrates() {
-        return this.crates;
-    }
-
-    public void removeCrate(Crate crate) {
-        this.crates.remove(crate);
-    }
-
-    public void spawnRandomCrate() {
-        // 1. Controllo Limite: Se ci sono già 2 (o più) casse, fermati subito!
-        if (this.crates.size() >= 2) {
-            return;
-        }
-
-        java.util.Random random = new java.util.Random();
-        boolean posizioneTrovata = false;
-        int tentativi = 0; // Per sicurezza, evitiamo loop infiniti se la mappa è minuscola
-
-        while (!posizioneTrovata && tentativi < 100) {
-            // Scegliamo una coordinata X e Y a caso all'interno della mappa
-            int randomX = random.nextInt(getCols());
-            int randomY = random.nextInt(getRows());
-
-            // 2. Controllo Pavimento: È una zona calpestabile? (Attenzione: isWalkable di solito vuole Y e poi X)
-            if (isWalkable(randomY, randomX)) {
-                
-                // 3. Controllo Sovrapposizione: C'è già un'altra cassa qui?
-                boolean cellaLibera = true;
-                for (Crate c : crates) {
-                    if (c.getX() == randomX && c.getY() == randomY) {
-                        cellaLibera = false;
-                        break;
-                    }
-                }
-
-                // Se la cella è calpestabile e non c'è una cassa... BOOM! Spawn!
-                if (cellaLibera) {
-                    addCrate(new Crate(randomX, randomY));
-                    posizioneTrovata = true;
-                    System.out.println("🎲 Nuova cassa apparsa casualmente in (" + randomX + ", " + randomY + ")!");
-                }
-            }
-            tentativi++;
-        }
-    }
+    public void addCrate(Crate crate) { this.crates.add(crate); }
+    public void removeCrate(Crate crate) { this.crates.remove(crate); }
 }

@@ -9,8 +9,7 @@ public class MapLoader {
 
     public GameMap loadMap(String filePath) {
         GameMap gameMap = new GameMap();
-        gameMap.addCrate(new model.Crate(3, 3));
-        gameMap.addCrate(new model.Crate(4, 3));
+        
 
         try {
             // Legge il file e lo trasforma in un oggetto JSON

@@ -2,7 +2,10 @@ package controller;
 
 import model.GameManager;
 import model.GameMap;
+import model.Crate;
 import view.MapPanel; 
+import java.util.ArrayList;
+import java.util.List;
 
 public class TurnController {
     private GameManager gameManager;
@@ -16,8 +19,11 @@ public class TurnController {
     private boolean p1HasBlocked = false; 
     private boolean p2HasMoved = false;
     private boolean p2HasBlocked = false; 
-    
     private boolean survivorIsP1 = true; 
+
+    // --- STORY 17: TIMER DINAMICO ---
+    private int turnsSinceLastEvent = 0; 
+    private static final int SPAWN_INTERVAL = 3; 
 
     public TurnController(GameManager gameManager, GameMap gameMap) {
         this.gameManager = gameManager;
@@ -34,17 +40,13 @@ public class TurnController {
         return false;
     }
 
-    // ==========================================================
-    // STORY 32: TRANSITION LOGIC E ROBUSTNESS
-    // ==========================================================
+    // --- STORY 32: ROBUSTEZZA ---
     public void changeState(GameState newState) {
-        // ROBUSTNESS: Impediamo transizioni illegali (es. da MENU direttamente a RESOLUTION)
         if (this.currentState == GameState.MENU && (newState == GameState.RESOLUTION || newState == GameState.P2_CHOICE)) {
             System.err.println("❌ ERRORE: Transizione illegale da " + this.currentState + " a " + newState);
             return;
         }
-
-        System.out.println("🔄 State Machine: Cambio stato da [" + this.currentState + "] ➡️ [" + newState + "]");
+        System.out.println("🔄 State Machine: [" + this.currentState + "] ➡️ [" + newState + "]");
         this.currentState = newState;
     }
 
@@ -97,46 +99,54 @@ public class TurnController {
     }
 
     private void executeResolution() {
-        // 1. Aggiunto ZOMBIE_VICTORY qui per bloccare il gioco quando finisce
-        if (currentState == GameState.MENU || currentState == GameState.END_GAME || currentState == GameState.SURVIVOR_VICTORY || currentState == GameState.ZOMBIE_VICTORY) return; 
+        if (currentState == GameState.MENU || currentState == GameState.END_GAME || 
+            currentState == GameState.SURVIVOR_VICTORY || currentState == GameState.ZOMBIE_VICTORY) return; 
         
         gameManager.resolveGlobalTurn();
         
-        java.util.List<model.Crate> casseDaRimuovere = new java.util.ArrayList<>();
-        
-        for (model.Crate cassa : gameMap.getCrates()) {
-            boolean survivorSullaCassa = (gameMap.getSurvivor().getX() == cassa.getX() && gameMap.getSurvivor().getY() == cassa.getY());
-            boolean zombieSullaCassa = (gameMap.getZombie().getX() == cassa.getX() && gameMap.getZombie().getY() == cassa.getY());
+        // --- 1. RIMOZIONE CASSE E RESET TIMER ---
+        List<Crate> casseDaRimuovere = new ArrayList<>();
+        boolean raccoltaAvvenuta = false;
+
+        for (Crate cassa : gameMap.getCrates()) {
+            boolean sSuC = (gameMap.getSurvivor().getX() == cassa.getX() && gameMap.getSurvivor().getY() == cassa.getY());
+            boolean zSuC = (gameMap.getZombie().getX() == cassa.getX() && gameMap.getZombie().getY() == cassa.getY());
             
-            // Se almeno uno dei due è finito sulla cassa (o entrambi simultaneamente)
-            if (survivorSullaCassa || zombieSullaCassa) {
+            if (sSuC || zSuC) {
                 casseDaRimuovere.add(cassa);
-                System.out.println("📦 CASSA DISTRUTTA/RACCOLTA in (" + cassa.getX() + ", " + cassa.getY() + ")!");
+                raccoltaAvvenuta = true;
             }
         }
         
-        // Rimuoviamo fisicamente le casse dalla mappa (Logical Removal)
-        for (model.Crate c : casseDaRimuovere) {
+        for (Crate c : casseDaRimuovere) {
             gameMap.removeCrate(c);
+            System.out.println("📦 CASSA RACCOLTA! Timer resettato.");
         }
-        
-        // ==========================================================
-        // STORY: MAX CRATES LIMIT (Generation Bypass)
-        // ==========================================================
-        if (gameMap.getCrates().size() < model.CrateManager.MAX_CRATES) {
-            gameMap.spawnRandomCrate();
+
+        // --- 2. LOGICA TIMER (Reset se raccolta) ---
+        if (raccoltaAvvenuta) {
+            turnsSinceLastEvent = 0; 
         } else {
-            System.out.println("🛑 Limite massimo di " + model.CrateManager.MAX_CRATES + " casse raggiunto! Spawn saltato.");
+            turnsSinceLastEvent++;
+        }
+
+        System.out.println("⏳ Timer Cassa: " + turnsSinceLastEvent + "/3");
+
+        if (turnsSinceLastEvent >= SPAWN_INTERVAL) {
+            if (gameMap.getCrates().size() < 2) { 
+                gameMap.spawnRandomCrate();
+                turnsSinceLastEvent = 0; 
+            }
         }
         
+        // --- 3. LOGICA CHIAVE ---
         if (gameMap.getKey() != null) {
-            int keyGridX = gameMap.getKey().getX() / 64;
-            int keyGridY = gameMap.getKey().getY() / 64;
-            
-            if (gameMap.getSurvivor().getX() == keyGridX && gameMap.getSurvivor().getY() == keyGridY) {
+            int kX = gameMap.getKey().getX() / 64;
+            int kY = gameMap.getKey().getY() / 64;
+            if (gameMap.getSurvivor().getX() == kX && gameMap.getSurvivor().getY() == kY) {
                 gameMap.getSurvivor().collectKey();
                 gameMap.setKey(null);
-                System.out.println("🔑 IL SOPRAVVISSUTO HA RACCOLTO LA CHIAVE!");
+                System.out.println("🔑 CHIAVE RACCOLTA!");
             }
         }
         
@@ -145,72 +155,49 @@ public class TurnController {
         p1HasMoved = false; p1HasBlocked = false;
         p2HasMoved = false; p2HasBlocked = false;
 
-        System.out.println("📍 FINE TURNO -> Sopravvissuto è a: (" + gameMap.getSurvivor().getX() + ", " + gameMap.getSurvivor().getY() + ") | Zombie è a: (" + gameMap.getZombie().getX() + ", " + gameMap.getZombie().getY() + ")");
+        checkFinalConditions();
+    }
 
+    private void checkFinalConditions() {
         if (gameMap.getSurvivor().getX() == gameMap.getZombie().getX() && 
             gameMap.getSurvivor().getY() == gameMap.getZombie().getY()) {
             
             changeState(GameState.ZOMBIE_VICTORY);
-            System.out.println("🧟‍♂️ LO ZOMBIE HA MANGIATO IL SOPRAVVISSUTO! HA VINTO!");
+            System.out.println("🧟‍♂️ LO ZOMBIE HA VINTO!");
             
-            if (mapPanel != null) {
-                mapPanel.repaint();
-            }
-        } 
-        // PRIORITÀ 2: Il Sopravvissuto scappa (viene controllato SOLO se lo Zombie non l'ha mangiato)
-        else if (checkVictoryCondition()) {
+        } else if (checkVictoryCondition()) {
+            
             changeState(GameState.SURVIVOR_VICTORY); 
             System.out.println("🏆 IL SOPRAVVISSUTO HA VINTO!");
             
-            if (mapPanel != null) {
-                mapPanel.repaint();
-            }
-        } 
-        // NESSUNA VITTORIA: Il gioco continua al prossimo turno
-        else {
+        } else {
             changeState(GameState.P1_CHOICE); 
-
             if (mapPanel != null) {
-                if (survivorIsP1) {
-                    mapPanel.evidenziaMossePersonaggio(gameMap.getSurvivor().getX(), gameMap.getSurvivor().getY());
-                } else {
-                    mapPanel.evidenziaMossePersonaggio(gameMap.getZombie().getX(), gameMap.getZombie().getY());
-                }
+                if (survivorIsP1) mapPanel.evidenziaMossePersonaggio(gameMap.getSurvivor().getX(), gameMap.getSurvivor().getY());
+                else mapPanel.evidenziaMossePersonaggio(gameMap.getZombie().getX(), gameMap.getZombie().getY());
             }
-            
-            System.out.println("🔄 Nuovo turno iniziato! Tocca di nuovo a P1.");
         }
     }
 
     private boolean checkVictoryCondition() {
-        if (gameMap == null || gameMap.getSurvivor() == null || gameMap.getDoor() == null) {
-            return false;
-        }
-
+        if (gameMap == null || gameMap.getSurvivor() == null || gameMap.getDoor() == null) return false;
         model.Survivor s = gameMap.getSurvivor();
         model.Door d = gameMap.getDoor();
-
         boolean isOnDoor = (s.getY() == d.getGridRow()) && 
                            (s.getX() == d.getGridColLeft() || s.getX() == d.getGridColRight());
-
-        boolean hasKey = s.hasKey();
-
-        return isOnDoor && hasKey; 
+        return isOnDoor && s.hasKey(); 
     }
 
     public GameState getCurrentState() { return currentState; }
     public void setP1HasBlocked(boolean b) { this.p1HasBlocked = b; }
     public void setP2HasBlocked(boolean b) { this.p2HasBlocked = b; }
 
-    // ==========================================
-    // STORY 27: END SCREEN AND RESET (NP-34)
-    // ==========================================
+    // --- STORY 27: RESET TOTALE (PULITO) ---
     public void resetGame() {
-        // 1. Ripristiniamo le variabili di turno base
         p1HasMoved = false; p1HasBlocked = false;
         p2HasMoved = false; p2HasBlocked = false;
+        turnsSinceLastEvent = 0; 
 
-        // 2. Cancelliamo i "fantasmi" delle mosse precedenti e togliamo la chiave
         if (gameMap.getSurvivor() != null) {
             gameMap.getSurvivor().cancelPlannedMove();
             gameMap.getSurvivor().cancelPlannedBlock();
@@ -221,14 +208,11 @@ public class TurnController {
             gameMap.getZombie().cancelPlannedBlock();
         }
 
-        // 3. Spazziamo via tutte le casse rimanenti dalla mappa
         if (gameMap.getCrates() != null) {
             gameMap.getCrates().clear();
         }
 
-        // 4. Riportiamo lo stato ufficiale al Menu
         changeState(GameState.MENU);
-        
-        System.out.println("🧹 GIOCO RESETTATO CON SUCCESSO! La memoria è pulita.");
+        System.out.println("🧹 RESET COMPLETO EFFETTUATO.");
     }
 }
