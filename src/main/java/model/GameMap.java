@@ -31,10 +31,10 @@ public class GameMap {
     }
 
     // ==========================================================
-    // STORY 17: SPAWN INTELLIGENTE (Anti-Sovrapposizione e Collisione)
+    // STORY 17: SPAWN INTELLIGENTE (Distanza Minima 5 blocchi)
     // ==========================================================
     public void spawnRandomCrate() {
-        // 1. Controllo limite massimo (Story precedente)
+        // 1. Controllo limite massimo
         if (this.crates.size() >= CrateManager.MAX_CRATES) {
             System.out.println("🛑 GameMap: Limite massimo raggiunto. Niente spawn.");
             return;
@@ -43,7 +43,7 @@ public class GameMap {
         Random rand = new Random();
         boolean spawned = false;
         int tentativi = 0;
-        int maxTentativi = 100;
+        int maxTentativi = 200; // Aumentato a 200 perché ora la regola è molto severa
 
         while (!spawned && tentativi < maxTentativi) {
             int x = rand.nextInt(cols);
@@ -53,28 +53,35 @@ public class GameMap {
             // A. La cella deve essere calpestabile (no muri)
             boolean walkable = isWalkable(y, x);
             
-            // B. Non deve esserci il Sopravvissuto
-            boolean noSurvivor = (survivor != null && (survivor.getX() != x || survivor.getY() != y));
+            // B. Non deve esserci il Sopravvissuto (Se è nullo va bene, se c'è deve essere altrove)
+            boolean noSurvivor = (survivor == null || (survivor.getX() != x || survivor.getY() != y));
             
-            // C. Non deve esserci lo Zombie
-            boolean noZombie = (zombie != null && (zombie.getX() != x || zombie.getY() != y));
+            // C. Non deve esserci lo Zombie (Se è nullo va bene, se c'è deve essere altrove)
+            boolean noZombie = (zombie == null || (zombie.getX() != x || zombie.getY() != y));
             
-            // D. ANTI-SOVRAPPOSIZIONE: Non deve esserci già un'altra cassa
-            boolean noOtherCrate = true;
+            // D. DISTANZA MINIMA: Almeno 5 blocchi dalle altre casse
+            boolean distanceValid = true;
             for (Crate c : crates) {
-                if (c.getX() == x && c.getY() == y) {
-                    noOtherCrate = false;
-                    break;
+                // Calcolo della Distanza di Manhattan
+                int manhattanDist = Math.abs(c.getX() - x) + Math.abs(c.getY() - y);
+                if (manhattanDist < 5) {
+                    distanceValid = false;
+                    break; // Troppo vicina! Scartiamo questa cella
                 }
             }
 
             // Se tutti i controlli passano, confermiamo lo spawn
-            if (walkable && noSurvivor && noZombie && noOtherCrate) {
+            if (walkable && noSurvivor && noZombie && distanceValid) {
                 crates.add(new Crate(x, y));
                 spawned = true;
-                System.out.println("🎁 GameMap: Nuova cassa spawnata in (" + x + ", " + y + ")");
+                System.out.println("🎁 GameMap: Nuova cassa spawnata in (" + x + ", " + y + ") - Distanza rispettata!");
             }
             tentativi++;
+        }
+        
+        // Se non trova posto dopo 200 tentativi, lo segnaliamo
+        if (!spawned) {
+            System.out.println("⚠️ GameMap: Impossibile trovare uno spot valido a distanza 5 dopo " + maxTentativi + " tentativi.");
         }
     }
 
