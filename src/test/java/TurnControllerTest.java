@@ -183,4 +183,59 @@ public class TurnControllerTest {
         assertTrue(gameMap.getCrates().isEmpty(), "Tutte le casse della vecchia partita devono sparire!");
         assertEquals(TurnController.GameState.MENU, turnController.getCurrentState(), "Lo stato deve tornare al MENU!");
     }
+
+    @Test
+    public void testBonusRandomAssignment_DoubleMovement_Or_Stop() {
+        // Arrange: Mettiamo il Sopravvissuto su una cassa e forziamo la risoluzione
+        int stopOpponentCount = 0;
+        int doubleMovementCount = 0;
+        int numTrials = 100; // Facciamo 100 prove per testare la casualità al 50%
+
+        for (int i = 0; i < numTrials; i++) {
+            // Setup pulito per ogni tentativo
+            gameMap.getCrates().clear();
+            model.Crate crate = new model.Crate(2, 2); // Stessa posizione del Survivor (2,2)
+            gameMap.addCrate(crate);
+            survivor.setDoubleMoveBonus(false);
+            zombie.setCanMove(true);
+            
+            // Portiamo il TurnController in uno stato in cui può risolvere
+            turnController.changeState(TurnController.GameState.P2_CHOICE); 
+            turnController.setP2HasBlocked(true); // Simuliamo che il P2 abbia finito
+            
+            // Forziamo la risoluzione chiamando confermMove finta per il P2
+            turnController.confirmMove(10, 10); 
+
+            // Controllo post-risoluzione
+            if (survivor.hasDoubleMoveBonus()) {
+                doubleMovementCount++;
+            } else if (!zombie.canMove()) {
+                stopOpponentCount++;
+            }
+        }
+
+        // Assert: Ci aspettiamo che i risultati siano distribuiti (non tutti 0 o tutti 100)
+        assertTrue(doubleMovementCount > 0 && doubleMovementCount < 100, 
+            "Il bonus Double Movement non è mai stato assegnato o è sempre stato assegnato!");
+        assertTrue(stopOpponentCount > 0 && stopOpponentCount < 100, 
+            "Il bonus Stop Opponent non è mai stato assegnato o è sempre stato assegnato!");
+    }
+
+    @Test
+    public void testDoubleMovementReset_AfterTurn() {
+        // Arrange: Diamo artificialmente il bonus al Sopravvissuto
+        survivor.setDoubleMoveBonus(true);
+        assertTrue(survivor.hasDoubleMoveBonus(), "Il bonus deve essere attivo prima del turno");
+
+        // Act: Facciamo passare un intero turno (P1 sceglie, P2 sceglie, Risoluzione)
+        turnController.startGame(); // P1_CHOICE
+        turnController.confirmMove(3, 2); 
+        turnController.confirmBlock(3, 2); // Passa a P2_CHOICE
+        
+        turnController.confirmMove(10, 9);
+        turnController.confirmBlock(10, 9); // Risolve il turno e torna a P1_CHOICE
+
+        // Assert: Dopo la risoluzione globale, il bonus DEVE sparire
+        assertFalse(survivor.hasDoubleMoveBonus(), "Il bonus di Double Movement deve svanire alla fine del turno!");
+    }
 }

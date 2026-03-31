@@ -22,7 +22,7 @@ public class MapPanel extends JPanel {
     private GameMap map;
     private BufferedImage tileset;
     private BufferedImage keyImage; 
-    private BufferedImage crateImage; // Aggiunta la variabile per l'immagine della cassa
+    private BufferedImage crateImage; 
     
     private List<Point> validMoves = new ArrayList<>();
     private List<Point> validBlocks = new ArrayList<>(); 
@@ -31,7 +31,7 @@ public class MapPanel extends JPanel {
     private BufferedImage zombieImage;
     private BufferedImage survivorImage;
 
-    private Point cursorPosition = null; // Il cursore parte INVISIBILE!
+    private Point cursorPosition = null; 
     private boolean isChoosingBlock = false; 
 
     private final int SOURCE_TILE_SIZE = 64;
@@ -42,15 +42,11 @@ public class MapPanel extends JPanel {
 
     public MapPanel(GameMap map) {
         this.map = map;
-
-        // Permette di muovere i bottoni liberamente sulla mappa
         this.setLayout(null); 
 
-        // Creiamo i bottoni veri
         btnMenu = new javax.swing.JButton("Main Menu");
         btnQuit = new javax.swing.JButton("Quit");
 
-        // Stile dei bottoni (scuro con testo bianco, senza bordini strani)
         java.awt.Font fontBottoni = new java.awt.Font("Arial", java.awt.Font.BOLD, 18);
         btnMenu.setFont(fontBottoni);
         btnMenu.setBackground(new Color(50, 50, 50));
@@ -62,30 +58,24 @@ public class MapPanel extends JPanel {
         btnQuit.setForeground(Color.WHITE);
         btnQuit.setFocusPainted(false);
 
-        // All'inizio della partita devono essere invisibili
         btnMenu.setVisible(false);
         btnQuit.setVisible(false);
 
-        // Cosa succede se clicco "Quit"?
         btnQuit.addActionListener(e -> System.exit(0));
 
-        // Cosa succede se clicco "Main Menu"?
         btnMenu.addActionListener(e -> {
             if (turnController != null) turnController.resetGame();
             java.awt.Window window = javax.swing.SwingUtilities.getWindowAncestor(MapPanel.this);
             if (window instanceof javax.swing.JFrame) {
                 javax.swing.JFrame frame = (javax.swing.JFrame) window;
                 frame.setContentPane(new view.MainMenu(frame, new model.GameSession()));
-
-                frame.setSize(800, 500); // Riporta la finestra alla grandezza originale del menu
-                frame.setLocationRelativeTo(null); // La ricentra perfettamente sullo schermo
-
+                frame.setSize(800, 500); 
+                frame.setLocationRelativeTo(null); 
                 frame.revalidate();
                 frame.repaint();
             }
         });
 
-        // Aggiungiamo fisicamente i bottoni allo schermo
         this.add(btnMenu);
         this.add(btnQuit);
 
@@ -104,25 +94,27 @@ public class MapPanel extends JPanel {
 
                 int keyCode = e.getKeyCode();
 
-                // Capiamo chi si sta muovendo (Active) e chi è l'avversario (Opponent)
                 boolean survivorTurn = turnController.isSurvivorTurn();
                 Point activePos = survivorTurn ? new Point(map.getSurvivor().getX(), map.getSurvivor().getY()) 
                                                : new Point(map.getZombie().getX(), map.getZombie().getY());
                 Point oppPos = survivorTurn ? new Point(map.getZombie().getX(), map.getZombie().getY()) 
                                             : new Point(map.getSurvivor().getX(), map.getSurvivor().getY());
 
-                // Se scegliamo il movimento partiamo dal personaggio attivo, se scegliamo il blocco partiamo dall'avversario
                 Point centerRef = isChoosingBlock ? oppPos : activePos;
+                
+                // =================================================================
+                // 🚀 STORY 21: CURSORE LIBERO PER DOPPIO MOVIMENTO
+                // Ora il cursore si muove partendo da sé stesso, non dal personaggio!
+                // =================================================================
+                Point basePos = (cursorPosition != null) ? cursorPosition : centerRef;
                 Point target = null;
 
-                // Calcoliamo la cella che il giocatore vuole selezionare premendo la freccetta
-                if (keyCode == KeyEvent.VK_UP) target = new Point(centerRef.x, centerRef.y - 1);
-                else if (keyCode == KeyEvent.VK_DOWN) target = new Point(centerRef.x, centerRef.y + 1);
-                else if (keyCode == KeyEvent.VK_LEFT) target = new Point(centerRef.x - 1, centerRef.y);
-                else if (keyCode == KeyEvent.VK_RIGHT) target = new Point(centerRef.x + 1, centerRef.y);
+                if (keyCode == KeyEvent.VK_UP) target = new Point(basePos.x, basePos.y - 1);
+                else if (keyCode == KeyEvent.VK_DOWN) target = new Point(basePos.x, basePos.y + 1);
+                else if (keyCode == KeyEvent.VK_LEFT) target = new Point(basePos.x - 1, basePos.y);
+                else if (keyCode == KeyEvent.VK_RIGHT) target = new Point(basePos.x + 1, basePos.y);
 
                 if (target != null) {
-                    // Accendi il cursore SOLO se la cella scelta è una mossa valida!
                     if (!isChoosingBlock && validMoves != null && validMoves.contains(target)) {
                         cursorPosition = target;
                     } else if (isChoosingBlock && validBlocks != null && validBlocks.contains(target)) {
@@ -130,33 +122,33 @@ public class MapPanel extends JPanel {
                     }
                 } 
                 else if (keyCode == KeyEvent.VK_ENTER) {
-                    
                     if (!isChoosingBlock && cursorPosition != null && validMoves.contains(cursorPosition)) {
                         turnController.confirmMove(cursorPosition.x, cursorPosition.y);
                         isChoosingBlock = true;
                         validMoves.clear(); 
                         calcolaCaselleBlocco(); 
-                        cursorPosition = null; // Nascondiamo la selezione
+                        cursorPosition = null; 
                     } 
                     else if (isChoosingBlock && cursorPosition != null && validBlocks.contains(cursorPosition)) {
                         turnController.confirmBlock(cursorPosition.x, cursorPosition.y);
                         isChoosingBlock = false;
                         validBlocks.clear();
-                        cursorPosition = null; // Nascondiamo la selezione
+                        cursorPosition = null; 
                         
-                        // Passaggio di turno: mostriamo le mosse per il P2!
                         if (turnController.getCurrentState() == GameState.P2_CHOICE) {
                             boolean p2Survivor = turnController.isSurvivorTurn();
                             Point p2Pos = p2Survivor ? new Point(map.getSurvivor().getX(), map.getSurvivor().getY()) 
                                                      : new Point(map.getZombie().getX(), map.getZombie().getY());
-                            evidenziaMossePersonaggio(p2Pos.x, p2Pos.y);
+                            // Chiamiamo l'evidenziazione calcolando se P2 ha il bonus
+                            model.Entity p2Entity = p2Survivor ? map.getSurvivor() : map.getZombie();
+                            int p2Range = p2Entity.hasDoubleMoveBonus() ? 2 : 1;
+                            evidenziaMossePersonaggio(p2Pos.x, p2Pos.y, p2Range);
                         }
                     }
                 }
                 repaint();
             }
         });
-
     } 
 
     private void calcolaCaselleBlocco() {
@@ -179,7 +171,7 @@ public class MapPanel extends JPanel {
             keyImage = ImageIO.read(new File("src/main/resources/key.png")); 
             zombieImage = ImageIO.read(new File("src/main/resources/zombie.png"));
             survivorImage = ImageIO.read(new File("src/main/resources/survivor.png"));
-            crateImage = ImageIO.read(new File("src/main/resources/crate.png")); // <--- CARICAMENTO DELLA CASSA AGGIUNTO QUI
+            crateImage = ImageIO.read(new File("src/main/resources/crate.png")); 
         } catch (Exception e) { System.err.println("Errore: " + e.getMessage()); }
     }
 
@@ -220,19 +212,14 @@ public class MapPanel extends JPanel {
             }
         }
 
-        // ==========================================
-        // DISEGNO DELLE CASSE (CON PNG)
-        // ==========================================
         if (map.getCrates() != null) {
             for (model.Crate cassa : map.getCrates()) {
                 int drawX = cassa.getX() * DEST_TILE_SIZE;
                 int drawY = cassa.getY() * DEST_TILE_SIZE;
                 
                 if (crateImage != null) {
-                    // Disegna l'immagine PNG della cassa
                     g.drawImage(crateImage, drawX, drawY, DEST_TILE_SIZE, DEST_TILE_SIZE, null);
                 } else {
-                    // Fallback di emergenza: se non trova crate.png, disegna il quadrato
                     g.setColor(new Color(205, 133, 63)); 
                     g.fillRect(drawX, drawY, DEST_TILE_SIZE, DEST_TILE_SIZE);
                     g.setColor(new Color(139, 69, 19)); 
@@ -289,11 +276,10 @@ public class MapPanel extends JPanel {
             g.drawRect(dx, dy, DEST_TILE_SIZE * 2, DEST_TILE_SIZE);
         }
         
-        // --- HIGHLIGHT COLLISIONE ZOMBIE (Se lo Zombie ha vinto, disegna un cerchio/quadrato di sangue sotto di loro) ---
         if (turnController != null && turnController.getCurrentState() == GameState.ZOMBIE_VICTORY) {
             int collisionX = map.getZombie().getX() * DEST_TILE_SIZE;
             int collisionY = map.getZombie().getY() * DEST_TILE_SIZE;
-            g.setColor(new Color(150, 0, 0, 200)); // Rosso scuro sangue
+            g.setColor(new Color(150, 0, 0, 200)); 
             g.fillRect(collisionX, collisionY, DEST_TILE_SIZE, DEST_TILE_SIZE);
         }
 
@@ -304,7 +290,6 @@ public class MapPanel extends JPanel {
             g.drawImage(survivorImage, map.getSurvivor().getX() * DEST_TILE_SIZE, map.getSurvivor().getY() * DEST_TILE_SIZE, DEST_TILE_SIZE, DEST_TILE_SIZE, null);
         }
 
-        // IL CURSORE APPARE SOLO SE HAI SELEZIONATO UNA MOSSA!
         if (canShowIndicators && cursorPosition != null) {
             int cursorDrawX = cursorPosition.x * DEST_TILE_SIZE;
             int cursorDrawY = cursorPosition.y * DEST_TILE_SIZE;
@@ -313,13 +298,7 @@ public class MapPanel extends JPanel {
             g.drawRect(cursorDrawX + 1, cursorDrawY + 1, DEST_TILE_SIZE - 2, DEST_TILE_SIZE - 2); 
         }
         
-        // ==========================================
-        // NOTIFICHE VISIVE DI VITTORIA 
-        // ==========================================
-        
-        // 🏆 VITTORIA SOPRAVVISSUTO
         if (turnController != null && turnController.getCurrentState() == GameState.SURVIVOR_VICTORY) {
-            
             g.setColor(new Color(0, 0, 0, 180));
             g.fillRect(0, 0, getWidth(), getHeight());
 
@@ -333,14 +312,10 @@ public class MapPanel extends JPanel {
 
             g.setColor(Color.BLACK);
             g.drawString(messaggio, xTesto + 3, yTesto + 3);
-            g.setColor(new Color(255, 215, 0)); // Oro
+            g.setColor(new Color(255, 215, 0)); 
             g.drawString(messaggio, xTesto, yTesto);
         }
-        
-        // 🧟‍♂️ VITTORIA ZOMBIE
         else if (turnController != null && turnController.getCurrentState() == GameState.ZOMBIE_VICTORY) {
-            
-            // Schermo rosso sangue
             g.setColor(new Color(100, 0, 0, 190));
             g.fillRect(0, 0, getWidth(), getHeight());
 
@@ -352,22 +327,16 @@ public class MapPanel extends JPanel {
             int xTesto = (getWidth() - metrics.stringWidth(messaggio)) / 2;
             int yTesto = (getHeight() / 2);
 
-            // Ombra per far spiccare il testo
             g.setColor(Color.BLACK);
             g.drawString(messaggio, xTesto + 3, yTesto + 3);
-            // Scritta in bianco
             g.setColor(Color.WHITE);
             g.drawString(messaggio, xTesto, yTesto);
         }
 
-        // ==========================================
-        // MOSTRA I BOTTONI VERI A FINE PARTITA
-        // ==========================================
         if (turnController != null && 
            (turnController.getCurrentState() == GameState.SURVIVOR_VICTORY || 
             turnController.getCurrentState() == GameState.ZOMBIE_VICTORY)) {
             
-            // Accendiamo i bottoni e li posizioniamo al centro
             if (!btnMenu.isVisible()) {
                 int centerX = getWidth() / 2;
                 int btnY = getHeight() / 2 + 50; 
@@ -379,18 +348,27 @@ public class MapPanel extends JPanel {
                 btnQuit.setVisible(true);
             }
         } else {
-            // Se il gioco si resetta e riparte, rinascondiamo i bottoni!
             if (btnMenu != null && btnMenu.isVisible()) {
                 btnMenu.setVisible(false);
                 btnQuit.setVisible(false);
             }
         }
-
     } 
 
     public BufferedImage getTileset() { return tileset; }
-    public void evidenziaMossePersonaggio(int x, int y) {
-        java.util.List<java.awt.Point> mosse = map.getValidMoves(x, y, 1);
+
+    // ==========================================
+    // 🚀 STORY 21: OVERLOAD DEL METODO EVIDENZIA
+    // ==========================================
+    
+    // Nuovo metodo che accetta anche il Range!
+    public void evidenziaMossePersonaggio(int x, int y, int range) {
+        java.util.List<java.awt.Point> mosse = map.getValidMoves(x, y, range);
         setValidMoves(mosse);
+    }
+
+    // Vecchio metodo mantenuto per compatibilità, passa di default '1'
+    public void evidenziaMossePersonaggio(int x, int y) {
+        evidenziaMossePersonaggio(x, y, 1);
     }
 }
