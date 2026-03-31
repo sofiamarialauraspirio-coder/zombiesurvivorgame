@@ -22,6 +22,7 @@ public class MapPanel extends JPanel {
     private GameMap map;
     private BufferedImage tileset;
     private BufferedImage keyImage; 
+    private BufferedImage crateImage; // Aggiunta la variabile per l'immagine della cassa
     
     private List<Point> validMoves = new ArrayList<>();
     private List<Point> validBlocks = new ArrayList<>(); 
@@ -156,7 +157,7 @@ public class MapPanel extends JPanel {
             }
         });
 
-    } // <--- QUESTA È LA PARENTESI CHE CHIUDE IL COSTRUTTORE MapPanel(...)
+    } 
 
     private void calcolaCaselleBlocco() {
         validBlocks.clear();
@@ -178,6 +179,7 @@ public class MapPanel extends JPanel {
             keyImage = ImageIO.read(new File("src/main/resources/key.png")); 
             zombieImage = ImageIO.read(new File("src/main/resources/zombie.png"));
             survivorImage = ImageIO.read(new File("src/main/resources/survivor.png"));
+            crateImage = ImageIO.read(new File("src/main/resources/crate.png")); // <--- CARICAMENTO DELLA CASSA AGGIUNTO QUI
         } catch (Exception e) { System.err.println("Errore: " + e.getMessage()); }
     }
 
@@ -218,20 +220,26 @@ public class MapPanel extends JPanel {
             }
         }
 
+        // ==========================================
+        // DISEGNO DELLE CASSE (CON PNG)
+        // ==========================================
         if (map.getCrates() != null) {
             for (model.Crate cassa : map.getCrates()) {
                 int drawX = cassa.getX() * DEST_TILE_SIZE;
                 int drawY = cassa.getY() * DEST_TILE_SIZE;
                 
-                // Disegniamo una bella cassa di legno (Marrone)
-                g.setColor(new Color(205, 133, 63)); // Colore marrone chiaro
-                g.fillRect(drawX, drawY, DEST_TILE_SIZE, DEST_TILE_SIZE);
-                
-                // Bordo scuro e una "X" sopra per farla sembrare una vera cassa
-                g.setColor(new Color(139, 69, 19)); // Colore marrone scuro
-                g.drawRect(drawX, drawY, DEST_TILE_SIZE, DEST_TILE_SIZE);
-                g.drawLine(drawX, drawY, drawX + DEST_TILE_SIZE, drawY + DEST_TILE_SIZE);
-                g.drawLine(drawX + DEST_TILE_SIZE, drawY, drawX, drawY + DEST_TILE_SIZE);
+                if (crateImage != null) {
+                    // Disegna l'immagine PNG della cassa
+                    g.drawImage(crateImage, drawX, drawY, DEST_TILE_SIZE, DEST_TILE_SIZE, null);
+                } else {
+                    // Fallback di emergenza: se non trova crate.png, disegna il quadrato
+                    g.setColor(new Color(205, 133, 63)); 
+                    g.fillRect(drawX, drawY, DEST_TILE_SIZE, DEST_TILE_SIZE);
+                    g.setColor(new Color(139, 69, 19)); 
+                    g.drawRect(drawX, drawY, DEST_TILE_SIZE, DEST_TILE_SIZE);
+                    g.drawLine(drawX, drawY, drawX + DEST_TILE_SIZE, drawY + DEST_TILE_SIZE);
+                    g.drawLine(drawX + DEST_TILE_SIZE, drawY, drawX, drawY + DEST_TILE_SIZE);
+                }
             }
         }
 
@@ -378,7 +386,7 @@ public class MapPanel extends JPanel {
             }
         }
 
-    } // <--- QUESTA È LA PARENTESI CHE CHIUDE IL METODO paintComponent(...)
+    } 
 
     public BufferedImage getTileset() { return tileset; }
     public void evidenziaMossePersonaggio(int x, int y) {
