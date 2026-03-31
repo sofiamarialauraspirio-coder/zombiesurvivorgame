@@ -5,8 +5,8 @@ import java.awt.*;
 import model.GameSession;
 import model.GameMap;
 import model.MapLoader;
-import model.GameManager;          // IMPORTIAMO L'ARBITRO
-import controller.TurnController;  // IMPORTIAMO IL REGISTA
+import model.GameManager;
+import controller.TurnController;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import javax.swing.border.EmptyBorder;
@@ -14,6 +14,7 @@ import javax.swing.border.EmptyBorder;
 public class CharacterSelectionView extends JPanel {
     private GameSession session;
     private JFrame finestraPrincipale;
+    private JLabel lblTurno; // La scritta che dice di chi è il turno
 
     public CharacterSelectionView(JFrame finestraPrincipale, GameSession session) {
         this.finestraPrincipale = finestraPrincipale;
@@ -23,29 +24,44 @@ public class CharacterSelectionView extends JPanel {
 
         // Pannello di sfondo
         BackgroundPanel backgroundPanel = new BackgroundPanel("/ZombieVSsopravvissuto.jpeg");
-        backgroundPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 150, 30)); 
+        // Layout per mettere la scritta in alto e i bottoni al centro
+        backgroundPanel.setLayout(new BoxLayout(backgroundPanel, BoxLayout.Y_AXIS));
 
+        // ==========================================
+        // STORY 3: LANCIO DELLA MONETA (COIN TOSS)
+        // ==========================================
+        int choosingPlayer = session.tossCoin();
+        
+        // Creazione dell'etichetta dinamica (Dynamic Label Feedback)
+        lblTurno = new JLabel("Giocatore " + choosingPlayer + ": Scegli il tuo ruolo!", SwingConstants.CENTER);
+        lblTurno.setFont(new Font("Segoe UI", Font.BOLD, 46));
+        lblTurno.setForeground(Color.WHITE);
+        lblTurno.setAlignmentX(Component.CENTER_ALIGNMENT);
+        lblTurno.setBorder(new EmptyBorder(50, 0, 100, 0)); // Spazio sopra e sotto
+
+        // Creazione bottoni
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 150, 30));
+        btnPanel.setOpaque(false);
         IosGlassButton btnZombie = new IosGlassButton("Zombie");
         IosGlassButton btnSurvivor = new IosGlassButton("Sopravvissuto");
 
-        Font fontBottoni = new Font("Segoe UI", Font.BOLD, 24);
-        btnZombie.setFont(fontBottoni);
-        btnSurvivor.setFont(fontBottoni);
-
+        // Azioni bottoni (One-Click Selection & Coupling)
         btnZombie.addActionListener(e -> {
-            session.setPlayer1Choice("ZOMBIE");
-            session.setPlayer2Choice("SOPRAVVISSUTO"); 
+            session.assignRole("ZOMBIE");
             completataSelezione(); 
         });
 
         btnSurvivor.addActionListener(e -> {
-            session.setPlayer1Choice("SOPRAVVISSUTO");
-            session.setPlayer2Choice("ZOMBIE"); 
+            session.assignRole("SOPRAVVISSUTO");
             completataSelezione(); 
         });
 
-        backgroundPanel.add(btnZombie);
-        backgroundPanel.add(btnSurvivor);
+        btnPanel.add(btnZombie);
+        btnPanel.add(btnSurvivor);
+
+        backgroundPanel.add(lblTurno);
+        backgroundPanel.add(btnPanel);
+        
         add(backgroundPanel, BorderLayout.CENTER);
     }
 
@@ -74,27 +90,23 @@ public class CharacterSelectionView extends JPanel {
         glassPanel.setOpaque(false);
         glassPanel.setBorder(new EmptyBorder(30, 50, 30, 50)); 
 
+        // Usa i nuovi getter per prendere i ruoli
         String testoHTML = "<html><div style='text-align: center; color: white; font-family: Segoe UI;'>" +
                            "<h2 style='margin-bottom: 15px;'>Scelte Confermate!</h2>" +
-                           "Giocatore 1: <b style='color: #ff5555;'>" + session.getPlayer1Choice() + "</b><br><br>" +
-                           "Giocatore 2: <b style='color: #55aaff;'>" + session.getPlayer2Choice() + "</b>" +
+                           "Giocatore 1: <b style='color: #ff5555;'>" + session.getPlayer1Role() + "</b><br><br>" +
+                           "Giocatore 2: <b style='color: #55aaff;'>" + session.getPlayer2Role() + "</b>" +
                            "</div></html>";
         JLabel lblMessaggio = new JLabel(testoHTML, SwingConstants.CENTER);
 
         IosGlassButton btnOk = new IosGlassButton("INIZIA PARTITA");
         
-        // =================================================================
-        // LA MAGIA AVVIENE QUANDO CLICCHI "INIZIA PARTITA"!
-        // =================================================================
         btnOk.addActionListener(e -> {
             dialog.dispose(); // Chiudi il popup
 
-            // 1. CARICAMENTO MAPPA
             MapLoader loader = new MapLoader();
             GameMap map = loader.loadMap("src/main/resources/mappa_livello1.json"); 
             MapPanel mapPanel = new MapPanel(map);
 
-            // 2. COLLEGHIAMO IL CERVELLO
             if (map.getSurvivor() != null && map.getZombie() != null) {
                 GameManager gameManager = new GameManager(map.getSurvivor(), map.getZombie());
                 TurnController turnController = new TurnController(gameManager, map);
@@ -102,17 +114,13 @@ public class CharacterSelectionView extends JPanel {
                 mapPanel.setTurnController(turnController);
                 turnController.setMapPanel(mapPanel);
 
-                // ==========================================================
-                // ECCO LA MODIFICA: Diciamo all'Arbitro chi è il Giocatore 1
-                // ==========================================================
-                boolean p1IsSurvivor = "SOPRAVVISSUTO".equals(session.getPlayer1Choice());
+                // Diciamo all'Arbitro chi è il Giocatore 1 usando i nuovi metodi
+                boolean p1IsSurvivor = "SOPRAVVISSUTO".equals(session.getPlayer1Role());
                 turnController.setSurvivorIsP1(p1IsSurvivor);
 
-                // 3. 🚀 AVVIAMO IL MOTORE E IMPOSTIAMO LE PRIME MOSSE GIALLE!
-                turnController.startGame(); // Questo sposta lo stato su P1_CHOICE
+                turnController.startGame(); 
                 
-                // Evidenziamo le mosse iniziali in base a chi è il Giocatore 1
-                if ("SOPRAVVISSUTO".equals(session.getPlayer1Choice())) {
+                if (p1IsSurvivor) {
                     mapPanel.evidenziaMossePersonaggio(map.getSurvivor().getX(), map.getSurvivor().getY());
                 } else {
                     mapPanel.evidenziaMossePersonaggio(map.getZombie().getX(), map.getZombie().getY());
@@ -122,14 +130,12 @@ public class CharacterSelectionView extends JPanel {
                 System.err.println("Attenzione: Sopravvissuto o Zombie non trovati nella mappa!");
             }
 
-            // 4. CAMBIO SCHERMO: Mostriamo la mappa!
             finestraPrincipale.setContentPane(mapPanel);
             finestraPrincipale.revalidate();
             finestraPrincipale.repaint();
             finestraPrincipale.pack();
             finestraPrincipale.setLocationRelativeTo(null);
             
-            // FONDAMENTALE PER LA TASTIERA: diamo il focus al pannello appena appare!
             SwingUtilities.invokeLater(() -> mapPanel.requestFocusInWindow());
         });
 
