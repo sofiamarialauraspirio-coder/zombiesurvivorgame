@@ -10,10 +10,11 @@ public abstract class Entity {
     protected Point plannedMove;
     protected Point plannedBlock;
     
-    // --- STORY 20: VARIABILE CONGELAMENTO ---
+    // ==========================================
+    // 🧠 LE VARIABILI DELLA MEMORIA DEI BONUS!
+    // Se mancano queste, il personaggio si scorda di avere i potenziamenti!
+    // ==========================================
     protected boolean canMove = true; 
-    
-    // --- STORY PRECEDENTE: DOPPIO PASSO ---
     protected boolean doubleMoveBonus = false;
 
     public Entity(int startX, int startY) {
@@ -35,7 +36,7 @@ public abstract class Entity {
     }
     
     public Point getPlannedMove() { return plannedMove; }
-    public boolean hasPlannedMove() { return plannedMove != null; } // Aiuto per il Test
+    public boolean hasPlannedMove() { return plannedMove != null; } 
     
     public void cancelPlannedMove() {
         this.plannedMove = null;
@@ -61,14 +62,14 @@ public abstract class Entity {
     }
 
     // ==========================================
-    // STORY 20: METODI BONUS STOP OPPONENT
+    // METODI BONUS STOP OPPONENT (GHIACCIO)
     // ==========================================
     public boolean canMove() { return canMove; }
     public void setCanMove(boolean canMove) { this.canMove = canMove; }
     public void resetMoveStatus() { this.canMove = true; }
 
     // ==========================================
-    // METODI BONUS DOPPIO PASSO
+    // METODI BONUS DOPPIO PASSO (SAETTA)
     // ==========================================
     public boolean hasDoubleMoveBonus() { return doubleMoveBonus; }
     public void setDoubleMoveBonus(boolean bonus) { this.doubleMoveBonus = bonus; }
