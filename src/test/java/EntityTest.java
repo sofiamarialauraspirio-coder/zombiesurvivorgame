@@ -1,5 +1,4 @@
 import model.Entity;
-
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -30,10 +29,10 @@ public class EntityTest {
         // Act: Il giocatore sposta il cursore su (3, 2) e preme INVIO
         entity.planMove(3, 2);
         
-        // Assert: Verifichiamo la memoria segreta
+        // Assert: Verifichiamo la memoria segreta (usando il nuovo sistema a Point)
         assertTrue(entity.hasPlannedMove(), "La mossa deve risultare programmata");
-        assertEquals(3, entity.getPlannedX(), "La X programmata deve essere 3");
-        assertEquals(2, entity.getPlannedY(), "La Y programmata deve essere 2");
+        assertEquals(3, entity.getPlannedMove().x, "La X programmata deve essere 3");
+        assertEquals(2, entity.getPlannedMove().y, "La Y programmata deve essere 2");
         
         // CONTROLLO CRITICO PER LA NP-19 (Silent Planning): 
         // Le vere coordinate NON devono essere cambiate! Lo sprite deve rimanere fermo.

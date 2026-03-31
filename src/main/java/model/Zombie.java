@@ -1,12 +1,12 @@
 package model;
 
-// "extends Entity" significa: Lo Zombie è un figlio di Entity!
 public class Zombie extends Entity {
 
-    // Costruttore dello Zombie
-    public Zombie(int x, int y) {
-        // La parola "super" chiama il costruttore del Padre (Entity)
-        // e gli passa le coordinate X e Y per salvarle
-        super(x, y);
+    public Zombie(int startX, int startY) {
+        // Chiama il costruttore della classe padre (Entity)
+        super(startX, startY);
     }
+    
+    // In futuro, se lo Zombie avrà abilità speciali (es. sfondare porte),
+    // potrai aggiungerle qui!
 }
