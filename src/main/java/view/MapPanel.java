@@ -102,41 +102,44 @@ public class MapPanel extends JPanel {
                 Point oppPos = new Point(oppEntity.getX(), oppEntity.getY());
 
                 Point centerRef = isChoosingBlock ? oppPos : activePos;
-                int currentRange = (!isChoosingBlock && activeEntity.hasDoubleMoveBonus()) ? 2 : 1;
                 
                 Point basePos = (cursorPosition != null) ? cursorPosition : centerRef;
                 Point target = new Point(basePos);
 
-                // =========================================================
-                // 🧲 FIX: CURSORE MAGNETICO!
-                // Si aggancia all'asse e salta il centro automaticamente.
-                // =========================================================
                 if (keyCode == KeyEvent.VK_UP) {
                     target.x = centerRef.x; 
                     target.y = basePos.y - 1;
-                    if (target.y == centerRef.y) target.y -= 1; // Salta il centro
+                    if (target.y == centerRef.y) target.y -= 1; 
                 }
                 else if (keyCode == KeyEvent.VK_DOWN) {
                     target.x = centerRef.x;
                     target.y = basePos.y + 1;
-                    if (target.y == centerRef.y) target.y += 1; // Salta il centro
+                    if (target.y == centerRef.y) target.y += 1; 
                 }
                 else if (keyCode == KeyEvent.VK_LEFT) {
                     target.y = centerRef.y;
                     target.x = basePos.x - 1;
-                    if (target.x == centerRef.x) target.x -= 1; // Salta il centro
+                    if (target.x == centerRef.x) target.x -= 1; 
                 }
                 else if (keyCode == KeyEvent.VK_RIGHT) {
                     target.y = centerRef.y;
                     target.x = basePos.x + 1;
-                    if (target.x == centerRef.x) target.x += 1; // Salta il centro
+                    if (target.x == centerRef.x) target.x += 1; 
                 }
 
                 if (keyCode == KeyEvent.VK_UP || keyCode == KeyEvent.VK_DOWN || 
                     keyCode == KeyEvent.VK_LEFT || keyCode == KeyEvent.VK_RIGHT) {
                     
-                    int dist = Math.abs(target.x - centerRef.x) + Math.abs(target.y - centerRef.y);
-                    if (dist <= currentRange) {
+                    // =================================================================
+                    // 🚫 FIX CURSORE SUI MURI: Controlla se la mossa è davvero valida
+                    // prima di permettere al cursore di spostarsi!
+                    // =================================================================
+                    boolean isCenter = target.equals(centerRef);
+                    boolean isValidMove = !isChoosingBlock && validMoves != null && validMoves.contains(target);
+                    boolean isValidBlock = isChoosingBlock && validBlocks != null && validBlocks.contains(target);
+
+                    // Il cursore si muove SOLO se la casella è giocabile (o se torna al centro)
+                    if (isCenter || isValidMove || isValidBlock) {
                         cursorPosition = target;
                     }
                 } 
@@ -146,7 +149,7 @@ public class MapPanel extends JPanel {
                         isChoosingBlock = true;
                         validMoves.clear(); 
                         calcolaCaselleBlocco(); 
-                        cursorPosition = null; // Il cursore sparirà fino a che non premi una freccia!
+                        cursorPosition = null; 
                     } 
                     else if (isChoosingBlock && cursorPosition != null && validBlocks != null && validBlocks.contains(cursorPosition)) {
                         turnController.confirmBlock(cursorPosition.x, cursorPosition.y);
@@ -294,15 +297,21 @@ public class MapPanel extends JPanel {
         }
 
         if (canShowIndicators && cursorPosition != null && turnController != null) {
-            int cursorDrawX = cursorPosition.x * DEST_TILE_SIZE;
-            int cursorDrawY = cursorPosition.y * DEST_TILE_SIZE;
-            
-            boolean isValid = (!isChoosingBlock && validMoves != null && validMoves.contains(cursorPosition)) || 
-                              (isChoosingBlock && validBlocks != null && validBlocks.contains(cursorPosition));
-            
-            g.setColor(isValid ? Color.CYAN : new Color(255, 0, 0, 150)); 
-            g.drawRect(cursorDrawX, cursorDrawY, DEST_TILE_SIZE, DEST_TILE_SIZE);
-            g.drawRect(cursorDrawX + 1, cursorDrawY + 1, DEST_TILE_SIZE - 2, DEST_TILE_SIZE - 2); 
+            boolean survivorTurn = turnController.isSurvivorTurn();
+            Point centerRef = isChoosingBlock ? 
+                (survivorTurn ? new Point(map.getZombie().getX(), map.getZombie().getY()) : new Point(map.getSurvivor().getX(), map.getSurvivor().getY())) : 
+                (survivorTurn ? new Point(map.getSurvivor().getX(), map.getSurvivor().getY()) : new Point(map.getZombie().getX(), map.getZombie().getY()));
+
+            if (!cursorPosition.equals(centerRef)) {
+                int cursorDrawX = cursorPosition.x * DEST_TILE_SIZE;
+                int cursorDrawY = cursorPosition.y * DEST_TILE_SIZE;
+                
+                // Il cursore ora sarà SEMPRE azzurro brillante, perché non gli permettiamo
+                // nemmeno più di andare sulle mosse invalide! Addio quadratino rosso.
+                g.setColor(Color.CYAN); 
+                g.drawRect(cursorDrawX, cursorDrawY, DEST_TILE_SIZE, DEST_TILE_SIZE);
+                g.drawRect(cursorDrawX + 1, cursorDrawY + 1, DEST_TILE_SIZE - 2, DEST_TILE_SIZE - 2); 
+            }
         }
         
         if (turnController != null && turnController.getCurrentState() == GameState.SURVIVOR_VICTORY) {
@@ -366,5 +375,9 @@ public class MapPanel extends JPanel {
     }
     public void evidenziaMossePersonaggio(int x, int y) {
         evidenziaMossePersonaggio(x, y, 1);
+    }
+
+    public BufferedImage getTileset() {
+        return this.tileset;
     }
 }
