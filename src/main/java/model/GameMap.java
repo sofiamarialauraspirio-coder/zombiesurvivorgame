@@ -86,17 +86,27 @@ public class GameMap {
     }
 
     public boolean isWalkable(int row, int col) {
+        // 1. Controllo dei confini (Evita crash se clicchi fuori dalla mappa)
         if (row < 0 || row >= rows || col < 0 || col >= cols) return false;
-        if (logicalMatrix[row][col] == TILE_WALL) return false;
 
-        // Gestione Porta (NP-32)
+        // 2. Gestione Speciale: La Porta
         if (door != null) {
             if (row == door.getGridRow() && (col == door.getGridColLeft() || col == door.getGridColRight())) {
+                // Si passa dalla porta SOLO se il sopravvissuto ha la chiave
                 return (survivor != null && survivor.hasKey());
             }
         }
+
+        // 3. 🧱 LA REGOLA DEI MURI DEFINITIVA
+        // In Tiled hai lasciato vuoto (0) dove c'è l'erba verde.
+        // Se il numero è diverso da 0 (es. 9, 287, 365, ecc.), ALLORA È UN MURO!
+        if (logicalMatrix[row][col] != 0) {
+            return false;
+        }
+
         return true; 
     }
+
 
     public void loadMapFromJson(String filePath) {
         try {

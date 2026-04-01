@@ -2,7 +2,6 @@ package controller;
 
 import model.Entity;
 import model.Survivor; 
-import model.Zombie;   
 import model.GameManager;
 import model.GameMap;
 import model.Crate;
