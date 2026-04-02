@@ -102,13 +102,22 @@ public class TurnController {
             (survivorIsP1 ? gameManager.getSurvivor() : gameManager.getZombie()) : 
             (survivorIsP1 ? gameManager.getZombie() : gameManager.getSurvivor());
 
+        // 🔴 Recuperiamo anche l'avversario per sapere se è congelato
+        Entity opponent = (currentState == GameState.P1_CHOICE) ? 
+            (survivorIsP1 ? gameManager.getZombie() : gameManager.getSurvivor()) : 
+            (survivorIsP1 ? gameManager.getSurvivor() : gameManager.getZombie());
+
         current.planMove(targetX, targetY);
 
         if (currentState == GameState.P1_CHOICE) {
             p1HasMoved = true;
+            // 🚀 SALTO AUTOMATICO: Se l'avversario è congelato, la fase di blocco si autocompleta!
+            if (!opponent.canMove()) p1HasBlocked = true; 
             checkP1Finished();
         } else if (currentState == GameState.P2_CHOICE) {
             p2HasMoved = true;
+            // 🚀 SALTO AUTOMATICO: Se l'avversario è congelato, la fase di blocco si autocompleta!
+            if (!opponent.canMove()) p2HasBlocked = true;
             checkP2Finished();
         }
     }
@@ -185,7 +194,7 @@ public class TurnController {
                 casseDaRimuovere.add(cassa);
                 raccoltaAvvenuta = true;
 
-                int roll = random.nextInt(3) + 1; 
+                int roll = random.nextInt(4) + 1; 
                 String picker = sSuC ? "Sopravvissuto" : "Zombie";
                 Color coloreTema = sSuC ? new Color(255, 170, 0) : new Color(170, 0, 255); 
 
@@ -205,6 +214,22 @@ public class TurnController {
                     if (sSuC) { gameManager.getSurvivor().setNumeroBlocchiPossibili(2); gameMap.getSurvivor().setNumeroBlocchiPossibili(2); }
                     if (zSuC) { gameManager.getZombie().setNumeroBlocchiPossibili(2); gameMap.getZombie().setNumeroBlocchiPossibili(2); }
                     mostraPopupBonus("DOUBLE BLOCK!", "Puoi posizionare <b>2 blocchi</b> in questo turno.", "/speed_bonus.png", new Color(100, 255, 100), picker); 
+                }
+                else if (roll == 4) {
+                    System.out.println("⚠️ TRAPPOLA! " + picker + " si è congelato da solo!");
+                    
+                    // Congeliamo il giocatore che ha preso la cassa (Self-Freeze)
+                    if (sSuC) { 
+                        gameManager.getSurvivor().setCanMove(false); 
+                        gameMap.getSurvivor().setCanMove(false); 
+                    }
+                    if (zSuC) { 
+                        gameManager.getZombie().setCanMove(false); 
+                        gameMap.getZombie().setCanMove(false); 
+                    }
+                    
+                    // Mostriamo il popup rosso di pericolo
+                    mostraPopupBonus("CASSA MALEDETTA!", "Hai calpestato una tagliola! Sei <b>congelato</b> per il prossimo turno.", "/freeze_bonus.png", new Color(255, 50, 50), picker); 
                 }
             }
         }

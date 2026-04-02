@@ -144,13 +144,17 @@ public class MapPanel extends JPanel {
                         int targetX = cursorPosition.x;
                         int targetY = cursorPosition.y;
                         int blocchiDisponibili = activeEntity.getNumeroBlocchiPossibili();
+
+                        boolean oppIsFrozen = !oppEntity.canMove();
                         
                         validMoves.clear(); 
                         cursorPosition = null; 
                         
                         turnController.confirmMove(targetX, targetY);
+
+
                         
-                        if (blocchiDisponibili > 0) {
+                       if (blocchiDisponibili > 0 && !oppIsFrozen) {
                             isChoosingBlock = true;
                             calcolaCaselleBlocco(); 
                         }
