@@ -11,9 +11,6 @@ public class GameSession {
         // Costruttore base
     }
 
-    // ==========================================
-    // STORY 3: COIN TOSS & RANDOM GENERATION
-    // ==========================================
     public int tossCoin() {
         Random rand = new Random();
         // rand.nextInt(2) genera 0 o 1. Aggiungiamo 1 per ottenere il Giocatore 1 o 2.
@@ -30,11 +27,8 @@ public class GameSession {
         return this.choosingPlayer;
     }
 
-    // ==========================================
-    // STORY 3: AUTOMATIC ROLE COUPLING & ONE-CLICK
-    // ==========================================
     public void assignRole(String chosenRole) {
-        // Capiamo qual è il ruolo rimasto ("Se scegli Sopravvissuto, l'altro è Zombie")
+        // FIX: Ora controlliamo la parola corretta in italiano passata dai bottoni!
         String otherRole = chosenRole.equals("SURVIVOR") ? "ZOMBIE" : "SURVIVOR";
 
         // Assegniamo i ruoli in base a chi aveva il diritto di scelta
