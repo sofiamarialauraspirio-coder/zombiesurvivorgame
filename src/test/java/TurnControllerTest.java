@@ -117,31 +117,36 @@ public class TurnControllerTest {
     }
 
     @Test
-    public void testBonusRandomAssignment_IncludesDoubleBlock() {
+    public void testBonusRandomAssignment_IncludesAll4Outcomes() {
         int stopOpponentCount = 0;
         int doubleMovementCount = 0;
         int doubleBlockCount = 0;
-        int numTrials = 200; 
+        int selfFreezeCount = 0; // 🔴 1. Aggiungiamo il contatore per la Tagliola
+        int numTrials = 400;     // 🔴 2. Alziamo a 400 i tentativi
 
         for (int i = 0; i < numTrials; i++) {
             gameMap.getCrates().clear();
             model.Crate crate = new model.Crate(2, 2); 
             gameMap.addCrate(crate);
             survivor.setDoubleMoveBonus(false);
-            survivor.setNumeroBlocchiPossibili(0);
+            survivor.setNumeroBlocchiPossibili(1); // Mettiamo 1 come concordato per la trappola invisibile
             zombie.setCanMove(true);
+            survivor.setCanMove(true); // 🔴 3. Fondamentale! Assicuriamoci che non sia già congelato
             
             turnController.changeState(TurnController.GameState.P2_CHOICE); 
-            turnController.confirmMove(10, 10); 
+            turnController.confirmMove(10, 10);
+            turnController.confirmBlock(10, 10); 
 
             if (survivor.hasDoubleMoveBonus()) doubleMovementCount++;
             else if (!zombie.canMove()) stopOpponentCount++;
             else if (survivor.getNumeroBlocchiPossibili() == 2) doubleBlockCount++;
+            else if (!survivor.canMove()) selfFreezeCount++; // 🔴 4. Se il Sopravvissuto è congelato, è uscita la Tagliola!
         }
 
-        assertTrue(doubleMovementCount > 0);
-        assertTrue(stopOpponentCount > 0);
-        assertTrue(doubleBlockCount > 0);
+        assertTrue(doubleMovementCount > 0, "Double Movement mancante");
+        assertTrue(stopOpponentCount > 0, "Stop Opponent mancante");
+        assertTrue(doubleBlockCount > 0, "Double Block mancante");
+        assertTrue(selfFreezeCount > 0, "Tagliola (Self-Freeze) mancante"); // 🔴 5. Verifica finale
     }
 
     @Test
