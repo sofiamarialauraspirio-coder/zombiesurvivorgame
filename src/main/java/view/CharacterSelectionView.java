@@ -27,9 +27,6 @@ public class CharacterSelectionView extends JPanel {
         // Layout per mettere la scritta in alto e i bottoni al centro
         backgroundPanel.setLayout(new BoxLayout(backgroundPanel, BoxLayout.Y_AXIS));
 
-        // ==========================================
-        // STORY 3: LANCIO DELLA MONETA (COIN TOSS)
-        // ==========================================
         int choosingPlayer = session.tossCoin();
         
         // Creazione dell'etichetta dinamica (Dynamic Label Feedback)
@@ -43,7 +40,7 @@ public class CharacterSelectionView extends JPanel {
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 150, 30));
         btnPanel.setOpaque(false);
         IosGlassButton btnZombie = new IosGlassButton("Zombie");
-        IosGlassButton btnSurvivor = new IosGlassButton("Sopravvissuto");
+        IosGlassButton btnSurvivor = new IosGlassButton("Survivor");
 
         // Azioni bottoni (One-Click Selection & Coupling)
         btnZombie.addActionListener(e -> {
@@ -52,7 +49,7 @@ public class CharacterSelectionView extends JPanel {
         });
 
         btnSurvivor.addActionListener(e -> {
-            session.assignRole("SOPRAVVISSUTO");
+            session.assignRole("SURVIVOR");
             completataSelezione(); 
         });
 
@@ -115,7 +112,7 @@ public class CharacterSelectionView extends JPanel {
                 turnController.setMapPanel(mapPanel);
 
                 // Diciamo all'Arbitro chi è il Giocatore 1 usando i nuovi metodi
-                boolean p1IsSurvivor = "SOPRAVVISSUTO".equals(session.getPlayer1Role());
+                boolean p1IsSurvivor = "SURVIVOR".equals(session.getPlayer1Role());
                 turnController.setSurvivorIsP1(p1IsSurvivor);
 
                 turnController.startGame(); 
