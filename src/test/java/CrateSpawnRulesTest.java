@@ -14,10 +14,10 @@ public class CrateSpawnRulesTest {
         // Svuotiamo eventuali casse iniziali per sicurezza
         map.getCrates().clear();
         
-        // Per questo test, simuliamo una griglia 12x12 completamente vuota e camminabile
+        // 🧱 FIX: Simuliamo una griglia 12x12 calpestabile usando lo ZERO!
         for(int r = 0; r < 12; r++) {
             for(int c = 0; c < 12; c++) {
-                map.setTile(r, c, GameMap.TILE_FLOOR);
+                map.setTile(r, c, 0); // <-- 0 è il nuovo pavimento!
             }
         }
     }

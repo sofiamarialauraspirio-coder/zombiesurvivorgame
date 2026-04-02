@@ -1,7 +1,7 @@
 package controller;
 
 import model.Entity;
-import model.Survivor; 
+import model.Survivor;   
 import model.GameManager;
 import model.GameMap;
 import model.Crate;
@@ -84,8 +84,6 @@ public class TurnController {
         if (mapPanel != null) {
             Entity current = isSurvivorTurn() ? gameMap.getSurvivor() : gameMap.getZombie();
             int range = current.hasDoubleMoveBonus() ? 2 : 1;
-            
-            if (range == 2) System.out.println("⚡ EVIDENZIO RAGGIO 2 per " + (isSurvivorTurn() ? "Survivor" : "Zombie"));
             mapPanel.evidenziaMossePersonaggio(current.getX(), current.getY(), range);
         }
     }
@@ -100,28 +98,40 @@ public class TurnController {
         if (currentState != GameState.P1_CHOICE && currentState != GameState.P2_CHOICE) return;
         if (!gameMap.isWalkable(targetY, targetX)) return; 
 
+        Entity current = (currentState == GameState.P1_CHOICE) ? 
+            (survivorIsP1 ? gameManager.getSurvivor() : gameManager.getZombie()) : 
+            (survivorIsP1 ? gameManager.getZombie() : gameManager.getSurvivor());
+
+        current.planMove(targetX, targetY);
+
         if (currentState == GameState.P1_CHOICE) {
-            if (survivorIsP1) gameManager.getSurvivor().planMove(targetX, targetY);
-            else gameManager.getZombie().planMove(targetX, targetY);
             p1HasMoved = true;
             checkP1Finished();
         } else if (currentState == GameState.P2_CHOICE) {
-            if (survivorIsP1) gameManager.getZombie().planMove(targetX, targetY);
-            else gameManager.getSurvivor().planMove(targetX, targetY);
             p2HasMoved = true;
             checkP2Finished();
         }
     }
 
-    public void confirmBlock(int targetX, int targetY) {
+    public boolean confirmBlock(int targetX, int targetY) {
+        Entity current = (currentState == GameState.P1_CHOICE) ? 
+            (survivorIsP1 ? gameManager.getSurvivor() : gameManager.getZombie()) : 
+            (survivorIsP1 ? gameManager.getZombie() : gameManager.getSurvivor());
+
+        current.planBlock(targetX, targetY);
+
+        if (current.getPlannedBlocks().size() >= current.getNumeroBlocchiPossibili()) {
+            forceFinishBlock();
+            return true; 
+        }
+        return false; 
+    }
+
+    public void forceFinishBlock() {
         if (currentState == GameState.P1_CHOICE) {
-            if (survivorIsP1) gameManager.getSurvivor().planBlock(targetX, targetY);
-            else gameManager.getZombie().planBlock(targetX, targetY);
             p1HasBlocked = true;
             checkP1Finished();
         } else if (currentState == GameState.P2_CHOICE) {
-            if (survivorIsP1) gameManager.getZombie().planBlock(targetX, targetY);
-            else gameManager.getSurvivor().planBlock(targetX, targetY);
             p2HasBlocked = true;
             checkP2Finished();
         }
@@ -146,22 +156,24 @@ public class TurnController {
         if (currentState == GameState.MENU || currentState == GameState.END_GAME || 
             currentState == GameState.SURVIVOR_VICTORY || currentState == GameState.ZOMBIE_VICTORY) return; 
         
-        // 1. Scongelamento di inizio turno
         gameManager.getSurvivor().resetMoveStatus();
         gameManager.getZombie().resetMoveStatus();
         gameMap.getSurvivor().resetMoveStatus(); 
         gameMap.getZombie().resetMoveStatus();   
 
-        // 2. Movimento globale
         gameManager.resolveGlobalTurn();
         
-        // 3. Reset bonus vecchio
         gameManager.getSurvivor().setDoubleMoveBonus(false);
         gameManager.getZombie().setDoubleMoveBonus(false);
         gameMap.getSurvivor().setDoubleMoveBonus(false); 
         gameMap.getZombie().setDoubleMoveBonus(false);   
         
-        // 4. Controllo casse e assegnazione nuovi bonus
+        // 🧱 TUTTO A UNO A FINE TURNO! (Trappola Invisibile)
+        gameManager.getSurvivor().setNumeroBlocchiPossibili(1);
+        gameManager.getZombie().setNumeroBlocchiPossibili(1);
+        gameMap.getSurvivor().setNumeroBlocchiPossibili(1);
+        gameMap.getZombie().setNumeroBlocchiPossibili(1);
+        
         List<Crate> casseDaRimuovere = new ArrayList<>();
         boolean raccoltaAvvenuta = false;
 
@@ -173,40 +185,26 @@ public class TurnController {
                 casseDaRimuovere.add(cassa);
                 raccoltaAvvenuta = true;
 
-                int roll = random.nextInt(2); 
-                
+                int roll = random.nextInt(3) + 1; 
                 String picker = sSuC ? "Sopravvissuto" : "Zombie";
                 Color coloreTema = sSuC ? new Color(255, 170, 0) : new Color(170, 0, 255); 
 
-                if (roll == 0) {
-                    System.out.println("⚡ ASSEGNATO DOPPIO MOVIMENTO A " + picker);
-                    if (sSuC) {
-                        gameManager.getSurvivor().setDoubleMoveBonus(true);
-                        gameMap.getSurvivor().setDoubleMoveBonus(true);
-                    }
-                    if (zSuC) {
-                        gameManager.getZombie().setDoubleMoveBonus(true);
-                        gameMap.getZombie().setDoubleMoveBonus(true);
-                    }
-                    
-                    mostraPopupBonus("DOUBLE MOVEMENT!", 
-                                     "Puoi muoverti fino a <b>2 caselle</b> in questo turno.", 
-                                     "/speed_bonus.png", coloreTema, picker);
-                } else {
-                    System.out.println("❄️ ASSEGNATO GHIACCIO. L'avversario di " + picker + " è bloccato!");
-                    if (sSuC) {
-                        gameManager.getZombie().setCanMove(false);
-                        gameMap.getZombie().setCanMove(false);
-                    }
-                    if (zSuC) {
-                        gameManager.getSurvivor().setCanMove(false);
-                        gameMap.getSurvivor().setCanMove(false);
-                    }
-
+                if (roll == 1) {
+                    if (sSuC) { gameManager.getSurvivor().setDoubleMoveBonus(true); gameMap.getSurvivor().setDoubleMoveBonus(true); }
+                    if (zSuC) { gameManager.getZombie().setDoubleMoveBonus(true); gameMap.getZombie().setDoubleMoveBonus(true); }
+                    mostraPopupBonus("DOUBLE MOVEMENT!", "Puoi muoverti fino a <b>2 caselle</b> in questo turno.", "/speed_bonus.png", coloreTema, picker);
+                } 
+                else if (roll == 2) {
+                    if (sSuC) { gameManager.getZombie().setCanMove(false); gameMap.getZombie().setCanMove(false); }
+                    if (zSuC) { gameManager.getSurvivor().setCanMove(false); gameMap.getSurvivor().setCanMove(false); }
                     String frozen = sSuC ? "Zombie" : "Sopravvissuto";
-                    mostraPopupBonus("STOP OPPONENT!", 
-                                     "L'avversario (" + frozen + ") è <b>congelato</b> per un turno.", 
-                                     "/freeze_bonus.png", new Color(0, 200, 255), picker); 
+                    mostraPopupBonus("STOP OPPONENT!", "L'avversario (" + frozen + ") è <b>congelato</b> per un turno.", "/freeze_bonus.png", new Color(0, 200, 255), picker); 
+                }
+                else if (roll == 3) {
+                    // 🎉 Assegna 2 blocchi. Il MapPanel leggerà questo "2" e disegnerà i muri veri!
+                    if (sSuC) { gameManager.getSurvivor().setNumeroBlocchiPossibili(2); gameMap.getSurvivor().setNumeroBlocchiPossibili(2); }
+                    if (zSuC) { gameManager.getZombie().setNumeroBlocchiPossibili(2); gameMap.getZombie().setNumeroBlocchiPossibili(2); }
+                    mostraPopupBonus("DOUBLE BLOCK!", "Puoi posizionare <b>2 blocchi</b> in questo turno.", "/speed_bonus.png", new Color(100, 255, 100), picker); 
                 }
             }
         }
@@ -351,12 +349,14 @@ public class TurnController {
             gameMap.getSurvivor().dropKey();
             gameManager.getSurvivor().resetMoveStatus();
             gameManager.getSurvivor().setDoubleMoveBonus(false);
+            gameManager.getSurvivor().setNumeroBlocchiPossibili(1);
         }
         if (gameMap.getZombie() != null) {
             gameMap.getZombie().cancelPlannedMove();
             gameMap.getZombie().cancelPlannedBlock();
             gameManager.getZombie().resetMoveStatus();
             gameManager.getZombie().setDoubleMoveBonus(false);
+            gameManager.getZombie().setNumeroBlocchiPossibili(1);
         }
         if (gameMap.getCrates() != null) gameMap.getCrates().clear();
         changeState(GameState.MENU);
