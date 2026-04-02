@@ -54,7 +54,7 @@ public class GameManagerTest {
     public void testBlockingResolution() {
         // Arrange: Il Sopravvissuto vuole andare in (0,1)...
         survivor.planMove(0, 1);
-        // ...ma lo Zombie gli piazza un Blocco proprio lì!
+        // ...ma lo Zombie gli piazza un Blocco proprio lì! (Ora finisce nella Lista dei blocchi)
         zombie.planBlock(0, 1); 
         zombie.planMove(5, 4); // E nel frattempo lo zombie si muove per i fatti suoi
 
@@ -86,6 +86,7 @@ public class GameManagerTest {
         assertEquals(5, zombie.getY());
         
         // 2. OCCUPIED CELL RULE: Poiché lo Zombie è ancora in (5,5), il blocco del Sopravvissuto in (5,5) deve sparire!
-        assertNull(survivor.getPlannedBlock(), "Il blocco del Sopravvissuto doveva essere annullato perché lo Zombie occupa la cella!");
+        // 🛠️ FIX: Ora usiamo getPlannedBlocks().isEmpty() al posto di assertNull!
+        assertTrue(survivor.getPlannedBlocks().isEmpty(), "Il blocco del Sopravvissuto doveva essere annullato perché lo Zombie occupa la cella!");
     }
 }

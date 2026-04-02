@@ -1,55 +1,50 @@
 package model;
 
 import java.awt.Point;
+import java.util.ArrayList;
+import java.util.List;
 
 public abstract class Entity {
     protected int x;
     protected int y;
     
-    // Piani di mossa usati dal GameManager
     protected Point plannedMove;
-    protected Point plannedBlock;
+    // 🧱 FIX: Ora usiamo una LISTA per supportare i blocchi multipli!
+    protected List<Point> plannedBlocks = new ArrayList<>();
     
-    // ==========================================
-    // 🧠 LE VARIABILI DELLA MEMORIA DEI BONUS!
-    // Se mancano queste, il personaggio si scorda di avere i potenziamenti!
-    // ==========================================
     protected boolean canMove = true; 
     protected boolean doubleMoveBonus = false;
+    protected int numeroBlocchiPossibili = 1; // Variabile della Story 22!
 
     public Entity(int startX, int startY) {
         this.x = startX;
         this.y = startY;
     }
 
-    // Getter e Setter base
     public int getX() { return x; }
     public int getY() { return y; }
     public void setX(int x) { this.x = x; }
     public void setY(int y) { this.y = y; }
 
-    // ==========================================
-    // LOGICA MOVIMENTO E BLOCCO
-    // ==========================================
     public void planMove(int targetX, int targetY) {
         this.plannedMove = new Point(targetX, targetY);
     }
     
     public Point getPlannedMove() { return plannedMove; }
     public boolean hasPlannedMove() { return plannedMove != null; } 
-    
-    public void cancelPlannedMove() {
-        this.plannedMove = null;
-    }
+    public void cancelPlannedMove() { this.plannedMove = null; }
 
+    // ==========================================
+    // LOGICA BLOCCHI MULTIPLI
+    // ==========================================
     public void planBlock(int targetX, int targetY) {
-        this.plannedBlock = new Point(targetX, targetY);
+        this.plannedBlocks.add(new Point(targetX, targetY));
     }
     
-    public Point getPlannedBlock() { return plannedBlock; }
+    public List<Point> getPlannedBlocks() { return plannedBlocks; }
     
     public void cancelPlannedBlock() {
-        this.plannedBlock = null;
+        this.plannedBlocks.clear();
     }
 
     public void executePlannedMove() {
@@ -58,19 +53,20 @@ public abstract class Entity {
             this.y = plannedMove.y;
             this.plannedMove = null;
         }
-        this.plannedBlock = null; 
+        this.plannedBlocks.clear(); // Resetta i blocchi a fine turno
     }
 
-    // ==========================================
-    // METODI BONUS STOP OPPONENT (GHIACCIO)
-    // ==========================================
     public boolean canMove() { return canMove; }
     public void setCanMove(boolean canMove) { this.canMove = canMove; }
-    public void resetMoveStatus() { this.canMove = true; }
+    
+    public void resetMoveStatus() { 
+        this.canMove = true; 
+        this.numeroBlocchiPossibili = 1; // Si resetta a 1 blocco normale
+    }
 
-    // ==========================================
-    // METODI BONUS DOPPIO PASSO (SAETTA)
-    // ==========================================
     public boolean hasDoubleMoveBonus() { return doubleMoveBonus; }
     public void setDoubleMoveBonus(boolean bonus) { this.doubleMoveBonus = bonus; }
+    
+    public int getNumeroBlocchiPossibili() { return numeroBlocchiPossibili; }
+    public void setNumeroBlocchiPossibili(int num) { this.numeroBlocchiPossibili = num; }
 }

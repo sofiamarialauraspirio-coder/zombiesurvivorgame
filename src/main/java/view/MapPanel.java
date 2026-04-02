@@ -130,32 +130,45 @@ public class MapPanel extends JPanel {
                 if (keyCode == KeyEvent.VK_UP || keyCode == KeyEvent.VK_DOWN || 
                     keyCode == KeyEvent.VK_LEFT || keyCode == KeyEvent.VK_RIGHT) {
                     
-                    // =================================================================
-                    // 🚫 FIX CURSORE SUI MURI: Controlla se la mossa è davvero valida
-                    // prima di permettere al cursore di spostarsi!
-                    // =================================================================
                     boolean isCenter = target.equals(centerRef);
                     boolean isValidMove = !isChoosingBlock && validMoves != null && validMoves.contains(target);
                     boolean isValidBlock = isChoosingBlock && validBlocks != null && validBlocks.contains(target);
 
-                    // Il cursore si muove SOLO se la casella è giocabile (o se torna al centro)
                     if (isCenter || isValidMove || isValidBlock) {
                         cursorPosition = target;
                     }
                 } 
                 else if (keyCode == KeyEvent.VK_ENTER) {
                     if (!isChoosingBlock && cursorPosition != null && validMoves != null && validMoves.contains(cursorPosition)) {
-                        turnController.confirmMove(cursorPosition.x, cursorPosition.y);
-                        isChoosingBlock = true;
+                        
+                        int targetX = cursorPosition.x;
+                        int targetY = cursorPosition.y;
+                        int blocchiDisponibili = activeEntity.getNumeroBlocchiPossibili();
+                        
                         validMoves.clear(); 
-                        calcolaCaselleBlocco(); 
                         cursorPosition = null; 
+                        
+                        turnController.confirmMove(targetX, targetY);
+                        
+                        if (blocchiDisponibili > 0) {
+                            isChoosingBlock = true;
+                            calcolaCaselleBlocco(); 
+                        }
                     } 
                     else if (isChoosingBlock && cursorPosition != null && validBlocks != null && validBlocks.contains(cursorPosition)) {
-                        turnController.confirmBlock(cursorPosition.x, cursorPosition.y);
-                        isChoosingBlock = false;
-                        validBlocks.clear();
-                        cursorPosition = null; 
+                        Point bloccoPiazzato = new Point(cursorPosition.x, cursorPosition.y);
+                        boolean finished = turnController.confirmBlock(bloccoPiazzato.x, bloccoPiazzato.y);
+                        
+                        validBlocks.remove(bloccoPiazzato); 
+                        
+                        if (finished || validBlocks.isEmpty()) {
+                            if (!finished) turnController.forceFinishBlock();
+                            isChoosingBlock = false;
+                            validBlocks.clear();
+                            cursorPosition = null; 
+                        } else {
+                            cursorPosition = oppPos; 
+                        }
                     }
                 }
                 repaint();
@@ -270,6 +283,33 @@ public class MapPanel extends JPanel {
             }
         }
 
+        // =========================================================
+        // 🚀 MAGIA: Muri grigi disegnati SOLO se hai il bonus Double Block (== 2) !
+        // =========================================================
+        Color grigioTrasparente = new Color(100, 100, 100, 200);
+        
+        if (map.getSurvivor() != null && map.getSurvivor().getPlannedBlocks() != null && map.getSurvivor().getNumeroBlocchiPossibili() == 2) {
+            for (Point p : map.getSurvivor().getPlannedBlocks()) {
+                int drawX = p.x * DEST_TILE_SIZE;
+                int drawY = p.y * DEST_TILE_SIZE;
+                g.setColor(grigioTrasparente);
+                g.fillRect(drawX, drawY, DEST_TILE_SIZE, DEST_TILE_SIZE);
+                g.setColor(Color.WHITE);
+                g.drawRect(drawX, drawY, DEST_TILE_SIZE, DEST_TILE_SIZE);
+            }
+        }
+        
+        if (map.getZombie() != null && map.getZombie().getPlannedBlocks() != null && map.getZombie().getNumeroBlocchiPossibili() == 2) {
+            for (Point p : map.getZombie().getPlannedBlocks()) {
+                int drawX = p.x * DEST_TILE_SIZE;
+                int drawY = p.y * DEST_TILE_SIZE;
+                g.setColor(grigioTrasparente);
+                g.fillRect(drawX, drawY, DEST_TILE_SIZE, DEST_TILE_SIZE);
+                g.setColor(Color.WHITE);
+                g.drawRect(drawX, drawY, DEST_TILE_SIZE, DEST_TILE_SIZE);
+            }
+        }
+
         if (map.getKey() != null && keyImage != null) {
             int scaledX = (map.getKey().getX() * DEST_TILE_SIZE) / SOURCE_TILE_SIZE;
             int scaledY = (map.getKey().getY() * DEST_TILE_SIZE) / SOURCE_TILE_SIZE;
@@ -306,8 +346,6 @@ public class MapPanel extends JPanel {
                 int cursorDrawX = cursorPosition.x * DEST_TILE_SIZE;
                 int cursorDrawY = cursorPosition.y * DEST_TILE_SIZE;
                 
-                // Il cursore ora sarà SEMPRE azzurro brillante, perché non gli permettiamo
-                // nemmeno più di andare sulle mosse invalide! Addio quadratino rosso.
                 g.setColor(Color.CYAN); 
                 g.drawRect(cursorDrawX, cursorDrawY, DEST_TILE_SIZE, DEST_TILE_SIZE);
                 g.drawRect(cursorDrawX + 1, cursorDrawY + 1, DEST_TILE_SIZE - 2, DEST_TILE_SIZE - 2); 
