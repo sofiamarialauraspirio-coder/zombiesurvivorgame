@@ -22,6 +22,7 @@ public class MapPanel extends JPanel {
     private BufferedImage tileset;
     private BufferedImage keyImage; 
     private BufferedImage crateImage; 
+    private BufferedImage doorImage;
     
     private List<Point> validMoves = new ArrayList<>();
     private List<Point> validBlocks = new ArrayList<>(); 
@@ -148,6 +149,11 @@ public class MapPanel extends JPanel {
             zombieImage = ImageIO.read(new File("src/main/resources/zombie.png"));
             survivorImage = ImageIO.read(new File("src/main/resources/survivor.png"));
             crateImage = ImageIO.read(new File("src/main/resources/crate.png")); 
+            // 🚪 Caricamento immagine porta
+            File filePorta = new File("src/main/resources/door.png");
+            if (filePorta.exists()) {
+                doorImage = ImageIO.read(filePorta);
+            }
         } catch (Exception e) { System.err.println("Errore: " + e.getMessage()); }
     }
 
@@ -235,20 +241,35 @@ public class MapPanel extends JPanel {
         }
 
         if (map.getKey() != null && keyImage != null) g.drawImage(keyImage, ((map.getKey().getX() * DEST_TILE_SIZE) / SOURCE_TILE_SIZE) - 16, ((map.getKey().getY() * DEST_TILE_SIZE) / SOURCE_TILE_SIZE) - 16, 32, 32, null);
-        if (map != null && map.getDoor() != null) { g.setColor(new Color(139, 69, 19)); g.fillRect(map.getDoor().getGridColLeft() * DEST_TILE_SIZE, map.getDoor().getGridRow() * DEST_TILE_SIZE, DEST_TILE_SIZE * 2, DEST_TILE_SIZE); }
+        // =========================================================
+        // 🚪 DISEGNO DELLA PORTA
+        // =========================================================
+        if (map != null && map.getDoor() != null) { 
+            int doorX = map.getDoor().getGridColLeft() * DEST_TILE_SIZE;
+            int doorY = map.getDoor().getGridRow() * DEST_TILE_SIZE;
+            
+            if (doorImage != null) {
+                // Effetto "Doppia Anta": Disegniamo due immagini quadrate perfette affiancate
+                g.drawImage(doorImage, doorX, doorY, DEST_TILE_SIZE, DEST_TILE_SIZE, null);
+                g.drawImage(doorImage, doorX + DEST_TILE_SIZE, doorY, DEST_TILE_SIZE, DEST_TILE_SIZE, null);
+            } else {
+                g.setColor(new Color(139, 69, 19)); 
+                g.fillRect(doorX, doorY, DEST_TILE_SIZE * 2, DEST_TILE_SIZE); 
+            }
+        }
         if (turnController != null && turnController.getCurrentState() == GameState.ZOMBIE_VICTORY) { g.setColor(new Color(150, 0, 0, 200)); g.fillRect(map.getZombie().getX() * DEST_TILE_SIZE, map.getZombie().getY() * DEST_TILE_SIZE, DEST_TILE_SIZE, DEST_TILE_SIZE); }
         if (map.getZombie() != null && zombieImage != null) g.drawImage(zombieImage, map.getZombie().getX() * DEST_TILE_SIZE, map.getZombie().getY() * DEST_TILE_SIZE, DEST_TILE_SIZE, DEST_TILE_SIZE, null);
         if (map.getSurvivor() != null && survivorImage != null) g.drawImage(survivorImage, map.getSurvivor().getX() * DEST_TILE_SIZE, map.getSurvivor().getY() * DEST_TILE_SIZE, DEST_TILE_SIZE, DEST_TILE_SIZE, null);
 
-        if (canShowIndicators && cursorPosition != null && turnController != null) {
-            boolean survivorTurn = turnController.isSurvivorTurn();
-            Point centerRef = isChoosingBlock ? (survivorTurn ? new Point(map.getZombie().getX(), map.getZombie().getY()) : new Point(map.getSurvivor().getX(), map.getSurvivor().getY())) : (survivorTurn ? new Point(map.getSurvivor().getX(), map.getSurvivor().getY()) : new Point(map.getZombie().getX(), map.getZombie().getY()));
-            if (!cursorPosition.equals(centerRef)) {
-                g.setColor(Color.CYAN); 
-                g.drawRect(cursorPosition.x * DEST_TILE_SIZE, cursorPosition.y * DEST_TILE_SIZE, DEST_TILE_SIZE, DEST_TILE_SIZE);
-                g.drawRect((cursorPosition.x * DEST_TILE_SIZE) + 1, (cursorPosition.y * DEST_TILE_SIZE) + 1, DEST_TILE_SIZE - 2, DEST_TILE_SIZE - 2); 
-            }
-        }
+        // if (canShowIndicators && cursorPosition != null && turnController != null) {
+        //     boolean survivorTurn = turnController.isSurvivorTurn();
+        //     Point centerRef = isChoosingBlock ? (survivorTurn ? new Point(map.getZombie().getX(), map.getZombie().getY()) : new Point(map.getSurvivor().getX(), map.getSurvivor().getY())) : (survivorTurn ? new Point(map.getSurvivor().getX(), map.getSurvivor().getY()) : new Point(map.getZombie().getX(), map.getZombie().getY()));
+        //     if (!cursorPosition.equals(centerRef)) {
+        //         g.setColor(Color.CYAN); 
+        //         g.drawRect(cursorPosition.x * DEST_TILE_SIZE, cursorPosition.y * DEST_TILE_SIZE, DEST_TILE_SIZE, DEST_TILE_SIZE);
+        //         g.drawRect((cursorPosition.x * DEST_TILE_SIZE) + 1, (cursorPosition.y * DEST_TILE_SIZE) + 1, DEST_TILE_SIZE - 2, DEST_TILE_SIZE - 2); 
+        //     }
+        // }
     } 
 
     public void evidenziaMossePersonaggio(int x, int y, int range) { setValidMoves(map.getValidMoves(x, y, range)); }
