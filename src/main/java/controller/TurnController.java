@@ -90,9 +90,15 @@ public class TurnController {
 
     public void startGame() {
         if (currentState == GameState.MENU) {
+            
+            // 🎁 FORZATURA SPAWN INIZIALE: Facciamo apparire 2 casse appena inizia la partita!
+            gameMap.spawnRandomCrate();
+            gameMap.spawnRandomCrate();
+            
             changeState(GameState.P1_CHOICE); 
         }
     }
+
 
     public void confirmMove(int targetX, int targetY) {
         if (currentState != GameState.P1_CHOICE && currentState != GameState.P2_CHOICE) return;

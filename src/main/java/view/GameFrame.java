@@ -20,6 +20,9 @@ public class GameFrame extends JFrame {
     private JLabel lblNomeGiocatore;
     private JLabel lblAzione;
     private JPanel hudPanel;
+    private JPanel pnlChecklist;
+    private JLabel lblCheck1;
+    private JLabel lblCheck2;
     
     // Variabile per non far spawnare infiniti popup a fine partita
     private boolean popupFinePartitaMostrato = false;
@@ -109,6 +112,46 @@ public class GameFrame extends JFrame {
         hudPanel.add(lblAzione);
         
         hudPanel.add(Box.createVerticalGlue());
+
+        // =========================================================
+        // ✨ NUOVO PANNELLO: CHECKLIST FASI DEL TURNO
+        // =========================================================
+        hudPanel.add(Box.createRigidArea(new Dimension(0, 30))); // Spazio sopra il box
+
+        pnlChecklist = new JPanel();
+        pnlChecklist.setLayout(new BoxLayout(pnlChecklist, BoxLayout.Y_AXIS));
+        pnlChecklist.setBackground(new Color(40, 40, 45)); // Sfondo scuro elegante
+        pnlChecklist.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(80, 80, 85), 1, true),
+            new EmptyBorder(12, 15, 12, 15)
+        ));
+        pnlChecklist.setAlignmentX(Component.CENTER_ALIGNMENT);
+        pnlChecklist.setMaximumSize(new Dimension(220, 90)); // Mantiene la forma fissa
+
+        JLabel lblTitoloCheck = new JLabel("📋 FASI DEL TURNO");
+        lblTitoloCheck.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        lblTitoloCheck.setForeground(new Color(200, 200, 200));
+        lblTitoloCheck.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        lblCheck1 = new JLabel("-");
+        lblCheck1.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lblCheck1.setForeground(Color.WHITE);
+        lblCheck1.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        lblCheck2 = new JLabel("-");
+        lblCheck2.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lblCheck2.setForeground(Color.WHITE);
+        lblCheck2.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        pnlChecklist.add(lblTitoloCheck);
+        pnlChecklist.add(Box.createRigidArea(new Dimension(0, 10)));
+        pnlChecklist.add(lblCheck1);
+        pnlChecklist.add(Box.createRigidArea(new Dimension(0, 8)));
+        pnlChecklist.add(lblCheck2);
+
+        hudPanel.add(pnlChecklist);
+        hudPanel.add(Box.createRigidArea(new Dimension(0, 20)));
+        // =========================================================
 
         // Questo comando "colla" spinge magicamente tutto verso il FONDO del pannello
         hudPanel.add(Box.createVerticalGlue());
@@ -201,6 +244,17 @@ public class GameFrame extends JFrame {
                 lblAzione.setText("<html><center>Usa le <b>FRECCE</b> per scegliere<br>e premi <b>INVIO</b> per piazzare<br>la <font color='#FF5555'>TRAPPOLA (Rosso)</font></center></html>");
             } else {
                 lblAzione.setText("<html><center>Usa le <b>FRECCE</b> per scegliere<br>e premi <b>INVIO</b> per confermare<br>il <font color='#FFFF55'>MOVIMENTO (Giallo)</font></center></html>");
+            }
+            // Aggiornamento Logica Checklist Dinamica (Struttura del Turno)
+            // ---------------------------------------------------------
+            if (!mapPanel.isChoosingBlock()) {
+                // FASE 1: Movimento
+                lblCheck1.setText("<html><font color='#FFFF55'><b>[►] Fase 1: Movimento</b></font></html>");
+                lblCheck2.setText("<html><font color='#777777'>[ ] Fase 2: Piazzamento Blocco</font></html>"); 
+            } else {
+                // FASE 2: Trappola/Blocco
+                lblCheck1.setText("<html><font color='#00FF00'>[✔]</font> <strike><font color='#AAAAAA'>Fase 1: Movimento</font></strike></html>");
+                lblCheck2.setText("<html><font color='#FF5555'><b>[►] Fase 2: Piazzamento Blocco</b></font></html>");
             }
         } 
         else if (state == GameState.SURVIVOR_VICTORY || state == GameState.ZOMBIE_VICTORY) {
