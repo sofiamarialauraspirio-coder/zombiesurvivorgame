@@ -114,17 +114,18 @@ public class GameFrame extends JFrame {
         if (state == GameState.P1_CHOICE || state == GameState.P2_CHOICE) {
             boolean isSurvivorTurn = turnController.isSurvivorTurn();
             
+            // Cambia nome e colore in base a chi gioca
             lblNomeGiocatore.setText(isSurvivorTurn ? "SOPRAVVISSUTO" : "ZOMBIE");
             lblNomeGiocatore.setForeground(isSurvivorTurn ? new Color(255, 200, 0) : new Color(180, 50, 255));
 
+            // Indica se devi muoverti o piazzare il blocco con istruzioni precise sui tasti
             if (mapPanel.isChoosingBlock()) {
-                lblAzione.setText("<html><center>Piazza la<br><font color='#FF5555'>TRAPPOLA (Rosso)</font></center></html>");
+                lblAzione.setText("<html><center>Usa le <b>FRECCE</b> per scegliere<br>e premi <b>INVIO</b> per piazzare<br>la <font color='#FF5555'>TRAPPOLA (Rosso)</font></center></html>");
             } else {
-                lblAzione.setText("<html><center>Scegli il<br><font color='#FFFF55'>MOVIMENTO (Giallo)</font></center></html>");
+                lblAzione.setText("<html><center>Usa le <b>FRECCE</b> per scegliere<br>e premi <b>INVIO</b> per confermare<br>il <font color='#FFFF55'>MOVIMENTO (Giallo)</font></center></html>");
             }
         } 
         else if (state == GameState.SURVIVOR_VICTORY || state == GameState.ZOMBIE_VICTORY) {
-            // Aggiorniamo l'HUD come prima
             if (state == GameState.SURVIVOR_VICTORY) {
                 lblNomeGiocatore.setText("VITTORIA!");
                 lblNomeGiocatore.setForeground(new Color(255, 215, 0));
@@ -135,7 +136,7 @@ public class GameFrame extends JFrame {
                 lblAzione.setText("<html><center>Lo Zombie ha<br>vinto!</center></html>");
             }
             
-            // 🚀 E QUI LANCIAMO IL POPUP! 🚀
+            // Lancia il popup
             if (!popupFinePartitaMostrato) {
                 popupFinePartitaMostrato = true;
                 mostraSchermataFinePartita(state);
