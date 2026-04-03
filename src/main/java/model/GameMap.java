@@ -107,6 +107,41 @@ public class GameMap {
         return true; 
     }
 
+    // ==========================================================
+    // 🧱 NUOVA REGOLA: Controllo per il piazzamento dei blocchi
+    // ==========================================================
+    public boolean isBlockable(int row, int col) {
+        // 1. Confini e Muri di base: la casella DEVE essere erba vuota (0)
+        if (row < 0 || row >= rows || col < 0 || col >= cols) return false;
+        if (logicalMatrix[row][col] != 0) return false;
+
+        // 2. 🚫 NO SULLA PORTA
+        if (door != null) {
+            if (row == door.getGridRow() && (col == door.getGridColLeft() || col == door.getGridColRight())) {
+                return false;
+            }
+        }
+
+        // 3. 🚫 NO SULLA CHIAVE (La chiave è in pixel, dividiamo per 64 per avere la griglia)
+        if (key != null) {
+            int keyGridX = key.getX() / 64;
+            int keyGridY = key.getY() / 64;
+            if (col == keyGridX && row == keyGridY) return false;
+        }
+
+        // 4. 🚫 NO SULLE CASSE MISTERIOSE
+        for (Crate c : crates) {
+            if (c.getX() == col && c.getY() == row) return false;
+        }
+
+        // 5. 🚫 NO SUI GIOCATORI
+        if (survivor != null && survivor.getX() == col && survivor.getY() == row) return false;
+        if (zombie != null && zombie.getX() == col && zombie.getY() == row) return false;
+
+        // Se sopravvive a tutti i controlli... è un ottimo posto per un blocco!
+        return true; 
+    }
+
 
     public void loadMapFromJson(String filePath) {
         try {
