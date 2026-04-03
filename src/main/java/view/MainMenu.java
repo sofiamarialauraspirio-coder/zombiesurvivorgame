@@ -107,7 +107,7 @@ public class MainMenu extends JPanel {
     }
 
     // ==============================================
-    // 📖 METODO PER IL POPUP DELLE REGOLE (STORY 2 + NP-30)
+    // 📖 METODO PER IL POPUP DELLE REGOLE
     // ==============================================
     private void mostraPopupRegole(JFrame parent) {
         JDialog dialog = new JDialog(parent, true); 
@@ -131,7 +131,6 @@ public class MainMenu extends JPanel {
         glassPanel.setOpaque(false);
         glassPanel.setBorder(new EmptyBorder(20, 30, 20, 30));
 
-        // 🚀 Testo HTML aggiornato con il rischio TRAPPOLA della NP-30!
         String htmlTesto = "<html><div style='font-family: Segoe UI; color: #E0E0E0; width: 450px;'>"
                 + "<h1 style='text-align: center; color: #FFD700; margin-top: 0;'>REGOLE DEL GIOCO</h1>"
                 
