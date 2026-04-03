@@ -4,6 +4,10 @@ import model.GameMap;
 import controller.TurnController;
 import controller.TurnController.GameState;
 
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.BasicStroke;
+
 import javax.swing.JPanel;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -208,48 +212,72 @@ public class MapPanel extends JPanel {
             if (state == GameState.MENU || state == GameState.RESOLUTION || state == GameState.END_GAME || state == GameState.ZOMBIE_VICTORY) canShowIndicators = false;
         }
 
+        // =========================================================
+        // ✨ GRAFICA: QUADRATI ARROTONDATI (Più spessi ed eleganti)
+        // =========================================================
+        Graphics2D g2 = (Graphics2D) g.create();
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON); 
+        
+        // 1. Un pizzico più spessi! (3.5 invece di 2.5)
+        g2.setStroke(new BasicStroke(3.5f)); 
+
+        // 2. Impostazioni del quadrato
+        int offset = 6; // Margine interno: staccato dal bordo ma non troppo piccolo
+        int size = DEST_TILE_SIZE - (offset * 2); 
+        int arc = 16; // Curvatura degli angoli (più è alto, più è rotondo)
+
         if (canShowIndicators && !isChoosingBlock && validMoves != null) {
             for (Point p : validMoves) {
-                g.setColor(new Color(255, 255, 0, 150));
-                g.fillRect(p.x * DEST_TILE_SIZE, p.y * DEST_TILE_SIZE, DEST_TILE_SIZE, DEST_TILE_SIZE);
-                g.setColor(Color.YELLOW);
-                g.drawRect(p.x * DEST_TILE_SIZE, p.y * DEST_TILE_SIZE, DEST_TILE_SIZE, DEST_TILE_SIZE);
+                int dx = p.x * DEST_TILE_SIZE + offset;
+                int dy = p.y * DEST_TILE_SIZE + offset;
+                g2.setColor(new Color(255, 255, 0, 50)); 
+                g2.fillRoundRect(dx, dy, size, size, arc, arc); // Riempe il quadrato arrotondato
+                g2.setColor(new Color(255, 215, 0, 220)); 
+                g2.drawRoundRect(dx, dy, size, size, arc, arc); // Disegna il bordo
             }
         }
 
         if (canShowIndicators && isChoosingBlock && validBlocks != null) {
             for (Point p : validBlocks) {
-                g.setColor(new Color(255, 0, 0, 150));
-                g.fillRect(p.x * DEST_TILE_SIZE, p.y * DEST_TILE_SIZE, DEST_TILE_SIZE, DEST_TILE_SIZE);
-                g.setColor(Color.RED);
-                g.drawRect(p.x * DEST_TILE_SIZE, p.y * DEST_TILE_SIZE, DEST_TILE_SIZE, DEST_TILE_SIZE);
+                int dx = p.x * DEST_TILE_SIZE + offset;
+                int dy = p.y * DEST_TILE_SIZE + offset;
+                g2.setColor(new Color(255, 0, 0, 50)); 
+                g2.fillRoundRect(dx, dy, size, size, arc, arc);
+                g2.setColor(new Color(255, 50, 50, 220)); 
+                g2.drawRoundRect(dx, dy, size, size, arc, arc);
             }
         }
 
-        Color grigioTrasparente = new Color(100, 100, 100, 200);
+        // Muri Bonus (Double Block) con lo stesso stile
         if (map.getSurvivor() != null && map.getSurvivor().getPlannedBlocks() != null && map.getSurvivor().getNumeroBlocchiPossibili() == 2) {
             for (Point p : map.getSurvivor().getPlannedBlocks()) {
-                g.setColor(grigioTrasparente); g.fillRect(p.x * DEST_TILE_SIZE, p.y * DEST_TILE_SIZE, DEST_TILE_SIZE, DEST_TILE_SIZE);
-                g.setColor(Color.WHITE); g.drawRect(p.x * DEST_TILE_SIZE, p.y * DEST_TILE_SIZE, DEST_TILE_SIZE, DEST_TILE_SIZE);
+                int dx = p.x * DEST_TILE_SIZE + offset;
+                int dy = p.y * DEST_TILE_SIZE + offset;
+                g2.setColor(new Color(100, 100, 100, 70)); 
+                g2.fillRoundRect(dx, dy, size, size, arc, arc);
+                g2.setColor(new Color(200, 200, 200, 220)); 
+                g2.drawRoundRect(dx, dy, size, size, arc, arc);
             }
         }
         if (map.getZombie() != null && map.getZombie().getPlannedBlocks() != null && map.getZombie().getNumeroBlocchiPossibili() == 2) {
             for (Point p : map.getZombie().getPlannedBlocks()) {
-                g.setColor(grigioTrasparente); g.fillRect(p.x * DEST_TILE_SIZE, p.y * DEST_TILE_SIZE, DEST_TILE_SIZE, DEST_TILE_SIZE);
-                g.setColor(Color.WHITE); g.drawRect(p.x * DEST_TILE_SIZE, p.y * DEST_TILE_SIZE, DEST_TILE_SIZE, DEST_TILE_SIZE);
+                int dx = p.x * DEST_TILE_SIZE + offset;
+                int dy = p.y * DEST_TILE_SIZE + offset;
+                g2.setColor(new Color(100, 100, 100, 70)); 
+                g2.fillRoundRect(dx, dy, size, size, arc, arc);
+                g2.setColor(new Color(200, 200, 200, 220)); 
+                g2.drawRoundRect(dx, dy, size, size, arc, arc);
             }
         }
+        g2.dispose();
 
+        // CHIAVE E PORTA
         if (map.getKey() != null && keyImage != null) g.drawImage(keyImage, ((map.getKey().getX() * DEST_TILE_SIZE) / SOURCE_TILE_SIZE) - 16, ((map.getKey().getY() * DEST_TILE_SIZE) / SOURCE_TILE_SIZE) - 16, 32, 32, null);
-        // =========================================================
-        // 🚪 DISEGNO DELLA PORTA
-        // =========================================================
+        
         if (map != null && map.getDoor() != null) { 
             int doorX = map.getDoor().getGridColLeft() * DEST_TILE_SIZE;
             int doorY = map.getDoor().getGridRow() * DEST_TILE_SIZE;
-            
             if (doorImage != null) {
-                // Effetto "Doppia Anta": Disegniamo due immagini quadrate perfette affiancate
                 g.drawImage(doorImage, doorX, doorY, DEST_TILE_SIZE, DEST_TILE_SIZE, null);
                 g.drawImage(doorImage, doorX + DEST_TILE_SIZE, doorY, DEST_TILE_SIZE, DEST_TILE_SIZE, null);
             } else {
@@ -257,20 +285,11 @@ public class MapPanel extends JPanel {
                 g.fillRect(doorX, doorY, DEST_TILE_SIZE * 2, DEST_TILE_SIZE); 
             }
         }
-        if (turnController != null && turnController.getCurrentState() == GameState.ZOMBIE_VICTORY) { g.setColor(new Color(150, 0, 0, 200)); g.fillRect(map.getZombie().getX() * DEST_TILE_SIZE, map.getZombie().getY() * DEST_TILE_SIZE, DEST_TILE_SIZE, DEST_TILE_SIZE); }
+
+        // PERSONAGGI
         if (map.getZombie() != null && zombieImage != null) g.drawImage(zombieImage, map.getZombie().getX() * DEST_TILE_SIZE, map.getZombie().getY() * DEST_TILE_SIZE, DEST_TILE_SIZE, DEST_TILE_SIZE, null);
         if (map.getSurvivor() != null && survivorImage != null) g.drawImage(survivorImage, map.getSurvivor().getX() * DEST_TILE_SIZE, map.getSurvivor().getY() * DEST_TILE_SIZE, DEST_TILE_SIZE, DEST_TILE_SIZE, null);
-
-        // if (canShowIndicators && cursorPosition != null && turnController != null) {
-        //     boolean survivorTurn = turnController.isSurvivorTurn();
-        //     Point centerRef = isChoosingBlock ? (survivorTurn ? new Point(map.getZombie().getX(), map.getZombie().getY()) : new Point(map.getSurvivor().getX(), map.getSurvivor().getY())) : (survivorTurn ? new Point(map.getSurvivor().getX(), map.getSurvivor().getY()) : new Point(map.getZombie().getX(), map.getZombie().getY()));
-        //     if (!cursorPosition.equals(centerRef)) {
-        //         g.setColor(Color.CYAN); 
-        //         g.drawRect(cursorPosition.x * DEST_TILE_SIZE, cursorPosition.y * DEST_TILE_SIZE, DEST_TILE_SIZE, DEST_TILE_SIZE);
-        //         g.drawRect((cursorPosition.x * DEST_TILE_SIZE) + 1, (cursorPosition.y * DEST_TILE_SIZE) + 1, DEST_TILE_SIZE - 2, DEST_TILE_SIZE - 2); 
-        //     }
-        // }
-    } 
+    }
 
     public void evidenziaMossePersonaggio(int x, int y, int range) { setValidMoves(map.getValidMoves(x, y, range)); }
     public void evidenziaMossePersonaggio(int x, int y) { evidenziaMossePersonaggio(x, y, 1); }
