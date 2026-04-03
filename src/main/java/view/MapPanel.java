@@ -36,7 +36,6 @@ public class MapPanel extends JPanel {
     private final int SOURCE_TILE_SIZE = 64;
     private final int DEST_TILE_SIZE = 48;
 
-    // Aggiunto per comunicare con l'HUD laterale
     private Runnable onStateChanged;
 
     public MapPanel(GameMap map) {
@@ -95,6 +94,15 @@ public class MapPanel extends JPanel {
                        if (blocchiDisponibili > 0 && !oppIsFrozen) {
                             isChoosingBlock = true;
                             calcolaCaselleBlocco(); 
+                            
+                            if (validBlocks.isEmpty()) {
+                                isChoosingBlock = false;
+                                turnController.forceFinishBlock();
+                            } else {
+                                // 🎯 FIX UX: Snappiamo il cursore al primo blocco rosso valido!
+                                // Così se il giocatore preme ripetutamente Invio, piazza la trappola senza bloccarsi.
+                                cursorPosition = new Point(validBlocks.get(0));
+                            }
                         }
                     } 
                     else if (isChoosingBlock && cursorPosition != null && validBlocks != null && validBlocks.contains(cursorPosition)) {
@@ -113,7 +121,6 @@ public class MapPanel extends JPanel {
                     }
                 }
                 repaint();
-                // 🔔 Avvisa l'HUD laterale di aggiornarsi
                 if (onStateChanged != null) onStateChanged.run(); 
             }
         });
@@ -126,10 +133,10 @@ public class MapPanel extends JPanel {
         validBlocks.clear();
         boolean survivorTurn = turnController.isSurvivorTurn();
         Point bersaglio = survivorTurn ? new Point(map.getZombie().getX(), map.getZombie().getY()) : new Point(map.getSurvivor().getX(), map.getSurvivor().getY());
-        if (map.isWalkable(bersaglio.y - 1, bersaglio.x)) validBlocks.add(new Point(bersaglio.x, bersaglio.y - 1));
-        if (map.isWalkable(bersaglio.y + 1, bersaglio.x)) validBlocks.add(new Point(bersaglio.x, bersaglio.y + 1));
-        if (map.isWalkable(bersaglio.y, bersaglio.x - 1)) validBlocks.add(new Point(bersaglio.x - 1, bersaglio.y));
-        if (map.isWalkable(bersaglio.y, bersaglio.x + 1)) validBlocks.add(new Point(bersaglio.x + 1, bersaglio.y));
+        if (map.isBlockable(bersaglio.y - 1, bersaglio.x)) validBlocks.add(new Point(bersaglio.x, bersaglio.y - 1));
+        if (map.isBlockable(bersaglio.y + 1, bersaglio.x)) validBlocks.add(new Point(bersaglio.x, bersaglio.y + 1));
+        if (map.isBlockable(bersaglio.y, bersaglio.x - 1)) validBlocks.add(new Point(bersaglio.x - 1, bersaglio.y));
+        if (map.isBlockable(bersaglio.y, bersaglio.x + 1)) validBlocks.add(new Point(bersaglio.x + 1, bersaglio.y));
     }
 
     public void setTurnController(TurnController turnController) { this.turnController = turnController; }
@@ -242,8 +249,6 @@ public class MapPanel extends JPanel {
                 g.drawRect((cursorPosition.x * DEST_TILE_SIZE) + 1, (cursorPosition.y * DEST_TILE_SIZE) + 1, DEST_TILE_SIZE - 2, DEST_TILE_SIZE - 2); 
             }
         }
-        
-        // Disegno vittoria rimosso dalla mappa, lo metteremo nell'HUD!
     } 
 
     public void evidenziaMossePersonaggio(int x, int y, int range) { setValidMoves(map.getValidMoves(x, y, range)); }
