@@ -18,7 +18,7 @@ public class Main {
         MainMenu menu = new MainMenu(finestraPrincipale, session);
         finestraPrincipale.setContentPane(menu);
 
-        // 4. Ciak, si gira!
+        // 4. Ciak, si gira! Yeeeeeeee
         finestraPrincipale.setVisible(true);
     }
 }
