@@ -213,7 +213,7 @@ public class TurnController {
                     // 🎉 Assegna 2 blocchi. Il MapPanel leggerà questo "2" e disegnerà i muri veri!
                     if (sSuC) { gameManager.getSurvivor().setNumeroBlocchiPossibili(2); gameMap.getSurvivor().setNumeroBlocchiPossibili(2); }
                     if (zSuC) { gameManager.getZombie().setNumeroBlocchiPossibili(2); gameMap.getZombie().setNumeroBlocchiPossibili(2); }
-                    mostraPopupBonus("DOUBLE BLOCK!", "Puoi posizionare <b>2 blocchi</b> in questo turno.", "/speed_bonus.png", new Color(100, 255, 100), picker); 
+                    mostraPopupBonus("DOUBLE BLOCK!", "Puoi posizionare <b>2 blocchi</b> in questo turno.", "/doppioblocco.png", new Color(100, 255, 100), picker); 
                 }
                 else if (roll == 4) {
                     System.out.println("⚠️ TRAPPOLA! " + picker + " si è congelato da solo!");
