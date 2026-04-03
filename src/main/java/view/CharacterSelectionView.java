@@ -93,8 +93,7 @@ public class CharacterSelectionView extends JPanel {
             // 🚀 IL COLLEGAMENTO MAGICO ALLA PLANCIA (GameFrame)
             // Invece di caricare solo la mappa, carichiamo lo schermo diviso!
             // =========================================================
-            GameFrame schermataGioco = new GameFrame();
-            
+            GameFrame schermataGioco = new GameFrame(this.session);
             // Poiché GameFrame è un JFrame (finestra) a sé stante, dobbiamo 
             // chiudere il vecchio MenuPrincipale e mostrare la nuova finestra
             finestraPrincipale.dispose(); 

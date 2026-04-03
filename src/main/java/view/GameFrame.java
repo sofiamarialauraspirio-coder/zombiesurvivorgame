@@ -14,6 +14,7 @@ public class GameFrame extends JFrame {
     private MapPanel mapPanel;
     private TurnController turnController;
     private GameMap map; 
+    private GameSession session;
 
     // Elementi dell'HUD Laterale
     private JLabel lblNomeGiocatore;
@@ -23,7 +24,10 @@ public class GameFrame extends JFrame {
     // Variabile per non far spawnare infiniti popup a fine partita
     private boolean popupFinePartitaMostrato = false;
 
-    public GameFrame() {
+    public GameFrame(GameSession session) {
+        this.session = session; 
+        
+        setTitle("Zombie Survivor - Map View");
         setTitle("Zombie Survivor - Map View");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout()); 
@@ -105,6 +109,80 @@ public class GameFrame extends JFrame {
         hudPanel.add(lblAzione);
         
         hudPanel.add(Box.createVerticalGlue());
+
+        // Questo comando "colla" spinge magicamente tutto verso il FONDO del pannello
+        hudPanel.add(Box.createVerticalGlue());
+
+        // =========================================================
+        // ✨ NUOVO MENU DI GIOCO IN BASSO A DESTRA
+        // =========================================================
+        JPanel pnlMenuBottom = new JPanel();
+        pnlMenuBottom.setLayout(new GridLayout(3, 1, 0, 10)); // 3 righe, 1 colonna, spaziatura 10px tra i tasti
+        pnlMenuBottom.setOpaque(false);
+        pnlMenuBottom.setMaximumSize(new Dimension(220, 140)); // Impedisce al menu di sformarsi
+
+        // Creiamo i bottoni usando il nostro nuovo metodo helper
+        JButton btnPausa = creaBottonePiatto("⏸️ PAUSA", new Color(70, 130, 180));
+        JButton btnRiavvia = creaBottonePiatto("🔄 RIAVVIA", new Color(210, 105, 30));
+        JButton btnMenu = creaBottonePiatto("🏠 MENU PRINCIPALE", new Color(180, 50, 50));
+
+        // Azione PAUSA (Un solo bottone per riprendere)
+        btnPausa.addActionListener(e -> {
+            mostraPopupCustom("⏸️ GIOCO IN PAUSA", "Riprendi fiato e pianifica la tua mossa.", 
+                "RIPRENDI PARTITA", new Color(70, 130, 180), null, 
+                null, null, null);
+        });
+
+       // Azione RIAVVIA potenziata
+        btnRiavvia.addActionListener(e -> {
+            mostraPopupCustom("🔄 CONFERMA RIAVVIO", "Vuoi davvero riavviare la partita?\nI progressi attuali andranno persi.", 
+                "SÌ, RIAVVIA", new Color(210, 105, 30), () -> {
+                    
+                    this.dispose(); // Chiudi la vecchia finestra
+                    
+                    // 1. Creiamo un nuovo GameFrame passandogli la sessione attuale (QUESTO RISOLVE L'ERRORE ROSSO!)
+                    GameFrame nuovaPartita = new GameFrame(this.session); 
+                    nuovaPartita.setVisible(true); 
+                    
+                    // 2. Facciamo ripartire il motore di gioco, recuperando i ruoli
+                    boolean p1IsSurvivor = "SURVIVOR".equals(this.session.getPlayer1Role());
+                    nuovaPartita.getTurnController().setSurvivorIsP1(p1IsSurvivor);
+                    nuovaPartita.getTurnController().startGame();
+                    
+                    // 3. Mostriamo i primissimi quadrati gialli della nuova mappa!
+                    nuovaPartita.aggiornaHud();
+                    nuovaPartita.getMapPanel().evidenziaMossePersonaggio(
+                        p1IsSurvivor ? nuovaPartita.getMap().getSurvivor().getX() : nuovaPartita.getMap().getZombie().getX(),
+                        p1IsSurvivor ? nuovaPartita.getMap().getSurvivor().getY() : nuovaPartita.getMap().getZombie().getY()
+                    );
+                    
+                }, 
+                "ANNULLA", new Color(100, 100, 100), null);
+        });
+
+        // Azione MENU PRINCIPALE (Due bottoni: Sì / No)
+        btnMenu.addActionListener(e -> {
+            mostraPopupCustom("🏠 MENU PRINCIPALE", "Tornare al Menu Principale?\nLa partita attuale andrà persa.", 
+                "SÌ, ESCI", new Color(180, 50, 50), () -> {
+                    
+                    // Invece di distruggere la finestra (this.dispose()), cambiamo solo il suo contenuto!
+                    this.getContentPane().removeAll(); // Svuota la mappa e l'HUD
+                    this.setSize(800, 500); // Ridimensiona la finestra per il menu
+                    this.setContentPane(new MainMenu(this, new GameSession())); // Inserisce il Menu
+                    this.setLocationRelativeTo(null); // Ricentra la finestra nello schermo
+                    this.revalidate(); // Forza l'aggiornamento visivo
+                    this.repaint();
+                    
+                }, 
+                "ANNULLA", new Color(100, 100, 100), null);
+        });
+
+        // Aggiungiamo i bottoni al piccolo pannello del menu...
+        pnlMenuBottom.add(btnPausa);
+        pnlMenuBottom.add(btnRiavvia);
+        pnlMenuBottom.add(btnMenu);
+        // ... e aggiungiamo il pannello del menu all'HUD laterale!
+        hudPanel.add(pnlMenuBottom);
     }
 
     public void aggiornaHud() {
@@ -252,4 +330,69 @@ public class GameFrame extends JFrame {
     public TurnController getTurnController() { return turnController; }
     public MapPanel getMapPanel() { return mapPanel; }
     public GameMap getMap() { return map; }
+
+    // =========================================================
+    // ✨ NUOVO POP-UP PERSONALIZZATO (Stile Dark/Videogioco)
+    // =========================================================
+    private void mostraPopupCustom(String titolo, String messaggio, String testoBtn1, Color coloreBtn1, Runnable azione1, String testoBtn2, Color coloreBtn2, Runnable azione2) {
+        JDialog dialog = new JDialog(this, true);
+        dialog.setUndecorated(true);
+        dialog.setBackground(new Color(0, 0, 0, 0)); // Sfondo trasparente
+
+        JPanel glassPanel = new JPanel(new BorderLayout(0, 20)) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(new Color(30, 30, 35, 245)); // Grigio scuro quasi opaco
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 25, 25);
+                g2.setColor(new Color(150, 150, 150)); // Bordo grigio chiaro
+                g2.setStroke(new BasicStroke(2.0f));
+                g2.drawRoundRect(1, 1, getWidth() - 3, getHeight() - 3, 25, 25);
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        glassPanel.setOpaque(false);
+        glassPanel.setBorder(new EmptyBorder(30, 40, 30, 40));
+
+        // Formattazione del testo
+        String htmlTesto = "<html><div style='text-align: center; font-family: Segoe UI;'>"
+                + "<h2 style='color: #FFD700; margin-top: 0; margin-bottom: 10px; font-size: 22px;'>" + titolo + "</h2>"
+                + "<p style='color: white; font-size: 14px; margin: 0;'>" + messaggio.replace("\n", "<br>") + "</p>"
+                + "</div></html>";
+        JLabel lblTesto = new JLabel(htmlTesto, SwingConstants.CENTER);
+
+        // Pannello bottoni
+        JPanel pnlBottoni = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 0));
+        pnlBottoni.setOpaque(false);
+
+        // Bottone 1 (Conferma o Azione principale)
+        if (testoBtn1 != null) {
+            JButton btn1 = creaBottonePiatto(testoBtn1, coloreBtn1);
+            btn1.addActionListener(e -> {
+                dialog.dispose();
+                if (azione1 != null) azione1.run();
+            });
+            pnlBottoni.add(btn1);
+        }
+
+        // Bottone 2 (Annulla, opzionale)
+        if (testoBtn2 != null) {
+            JButton btn2 = creaBottonePiatto(testoBtn2, coloreBtn2);
+            btn2.addActionListener(e -> {
+                dialog.dispose();
+                if (azione2 != null) azione2.run();
+            });
+            pnlBottoni.add(btn2);
+        }
+
+        glassPanel.add(lblTesto, BorderLayout.CENTER);
+        glassPanel.add(pnlBottoni, BorderLayout.SOUTH);
+
+        dialog.setContentPane(glassPanel);
+        dialog.pack();
+        dialog.setLocationRelativeTo(this); // Lo centra nello schermo
+        dialog.setVisible(true);
+    }    
 }
