@@ -3,10 +3,6 @@ package view;
 import javax.swing.*;
 import java.awt.*;
 import model.GameSession;
-import model.GameMap;
-import model.MapLoader;
-import model.GameManager;
-import controller.TurnController;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import javax.swing.border.EmptyBorder;
@@ -14,7 +10,7 @@ import javax.swing.border.EmptyBorder;
 public class CharacterSelectionView extends JPanel {
     private GameSession session;
     private JFrame finestraPrincipale;
-    private JLabel lblTurno; // La scritta che dice di chi è il turno
+    private JLabel lblTurno; 
 
     public CharacterSelectionView(JFrame finestraPrincipale, GameSession session) {
         this.finestraPrincipale = finestraPrincipale;
@@ -22,27 +18,22 @@ public class CharacterSelectionView extends JPanel {
         
         setLayout(new BorderLayout()); 
 
-        // Pannello di sfondo
         BackgroundPanel backgroundPanel = new BackgroundPanel("/ZombieVSsopravvissuto.jpeg");
-        // Layout per mettere la scritta in alto e i bottoni al centro
         backgroundPanel.setLayout(new BoxLayout(backgroundPanel, BoxLayout.Y_AXIS));
 
         int choosingPlayer = session.tossCoin();
         
-        // Creazione dell'etichetta dinamica (Dynamic Label Feedback)
         lblTurno = new JLabel("Giocatore " + choosingPlayer + ": Scegli il tuo ruolo!", SwingConstants.CENTER);
         lblTurno.setFont(new Font("Segoe UI", Font.BOLD, 46));
         lblTurno.setForeground(Color.WHITE);
         lblTurno.setAlignmentX(Component.CENTER_ALIGNMENT);
-        lblTurno.setBorder(new EmptyBorder(50, 0, 100, 0)); // Spazio sopra e sotto
+        lblTurno.setBorder(new EmptyBorder(50, 0, 100, 0)); 
 
-        // Creazione bottoni
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 150, 30));
         btnPanel.setOpaque(false);
         IosGlassButton btnZombie = new IosGlassButton("Zombie");
         IosGlassButton btnSurvivor = new IosGlassButton("Survivor");
 
-        // Azioni bottoni (One-Click Selection & Coupling)
         btnZombie.addActionListener(e -> {
             session.assignRole("ZOMBIE");
             completataSelezione(); 
@@ -63,7 +54,6 @@ public class CharacterSelectionView extends JPanel {
     }
 
     private void completataSelezione() {
-        // --- POPUP DI CONFERMA ---
         Window parentWindow = SwingUtilities.getWindowAncestor(this);
         JDialog dialog = new JDialog((Frame) parentWindow, true); 
         dialog.setUndecorated(true); 
@@ -87,7 +77,6 @@ public class CharacterSelectionView extends JPanel {
         glassPanel.setOpaque(false);
         glassPanel.setBorder(new EmptyBorder(30, 50, 30, 50)); 
 
-        // Usa i nuovi getter per prendere i ruoli
         String testoHTML = "<html><div style='text-align: center; color: white; font-family: Segoe UI;'>" +
                            "<h2 style='margin-bottom: 15px;'>Scelte Confermate!</h2>" +
                            "Giocatore 1: <b style='color: #ff5555;'>" + session.getPlayer1Role() + "</b><br><br>" +
@@ -100,40 +89,29 @@ public class CharacterSelectionView extends JPanel {
         btnOk.addActionListener(e -> {
             dialog.dispose(); // Chiudi il popup
 
-            MapLoader loader = new MapLoader();
-            GameMap map = loader.loadMap("src/main/resources/mappa_livello1.json"); 
-            MapPanel mapPanel = new MapPanel(map);
-
-            if (map.getSurvivor() != null && map.getZombie() != null) {
-                GameManager gameManager = new GameManager(map.getSurvivor(), map.getZombie());
-                TurnController turnController = new TurnController(gameManager, map);
-
-                mapPanel.setTurnController(turnController);
-                turnController.setMapPanel(mapPanel);
-
-                // Diciamo all'Arbitro chi è il Giocatore 1 usando i nuovi metodi
-                boolean p1IsSurvivor = "SURVIVOR".equals(session.getPlayer1Role());
-                turnController.setSurvivorIsP1(p1IsSurvivor);
-
-                turnController.startGame(); 
-                
-                if (p1IsSurvivor) {
-                    mapPanel.evidenziaMossePersonaggio(map.getSurvivor().getX(), map.getSurvivor().getY());
-                } else {
-                    mapPanel.evidenziaMossePersonaggio(map.getZombie().getX(), map.getZombie().getY());
-                }
-                
-            } else {
-                System.err.println("Attenzione: Sopravvissuto o Zombie non trovati nella mappa!");
-            }
-
-            finestraPrincipale.setContentPane(mapPanel);
-            finestraPrincipale.revalidate();
-            finestraPrincipale.repaint();
-            finestraPrincipale.pack();
-            finestraPrincipale.setLocationRelativeTo(null);
+            // =========================================================
+            // 🚀 IL COLLEGAMENTO MAGICO ALLA PLANCIA (GameFrame)
+            // Invece di caricare solo la mappa, carichiamo lo schermo diviso!
+            // =========================================================
+            GameFrame schermataGioco = new GameFrame();
             
-            SwingUtilities.invokeLater(() -> mapPanel.requestFocusInWindow());
+            // Poiché GameFrame è un JFrame (finestra) a sé stante, dobbiamo 
+            // chiudere il vecchio MenuPrincipale e mostrare la nuova finestra
+            finestraPrincipale.dispose(); 
+            schermataGioco.setVisible(true);
+
+            // Per la regola del Giocatore 1, lo passiamo direttamente all'arbitro
+            // che si trova dentro il nuovo GameFrame
+            boolean p1IsSurvivor = "SURVIVOR".equals(session.getPlayer1Role());
+            schermataGioco.getTurnController().setSurvivorIsP1(p1IsSurvivor);
+            schermataGioco.getTurnController().startGame();
+            
+            // Piccolo trucco: simuliamo un click freccia per mostrare i quadratini subito
+            schermataGioco.aggiornaHud();
+            schermataGioco.getMapPanel().evidenziaMossePersonaggio(
+                p1IsSurvivor ? schermataGioco.getMap().getSurvivor().getX() : schermataGioco.getMap().getZombie().getX(),
+                p1IsSurvivor ? schermataGioco.getMap().getSurvivor().getY() : schermataGioco.getMap().getZombie().getY()
+            );
         });
 
         JPanel pnlBottone = new JPanel(new FlowLayout(FlowLayout.CENTER));
@@ -149,26 +127,20 @@ public class CharacterSelectionView extends JPanel {
         dialog.setVisible(true); 
     }
 
-    // --- CLASSE INTERNA PER I BOTTONI ---
     private class IosGlassButton extends JButton {
         private boolean hovered = false;
-
         public IosGlassButton(String text) {
             super(text);
             setFont(new Font("Segoe UI", Font.BOLD, 24)); 
             setForeground(Color.WHITE); 
-            setContentAreaFilled(false); 
-            setFocusPainted(false); 
-            setBorderPainted(false); 
+            setContentAreaFilled(false); setFocusPainted(false); setBorderPainted(false); 
             setCursor(new Cursor(Cursor.HAND_CURSOR));
             setBorder(BorderFactory.createEmptyBorder(12, 35, 12, 35));
-
             addMouseListener(new MouseAdapter() {
                 public void mouseEntered(MouseEvent e) { hovered = true; repaint(); }
                 public void mouseExited(MouseEvent e) { hovered = false; repaint(); }
             });
         }
-
         @Override
         protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
@@ -177,10 +149,7 @@ public class CharacterSelectionView extends JPanel {
             int alpha = hovered ? 70 : 30; 
             Color topColor = new Color(255, 255, 255, alpha); 
             Color bottomColor = new Color(255, 255, 255, alpha / 2); 
-            LinearGradientPaint glassGradient = new LinearGradientPaint(
-                0, 0, getWidth(), getHeight(), new float[]{0f, 1f}, new Color[]{topColor, bottomColor}
-            );
-            g2.setPaint(glassGradient);
+            g2.setPaint(new LinearGradientPaint(0, 0, getWidth(), getHeight(), new float[]{0f, 1f}, new Color[]{topColor, bottomColor}));
             g2.fillRoundRect(0, 0, getWidth(), getHeight(), cornerRadius, cornerRadius);
             g2.setColor(new Color(255, 255, 255, 140)); 
             g2.setStroke(new BasicStroke(2.0f)); 
@@ -190,22 +159,16 @@ public class CharacterSelectionView extends JPanel {
         }
     }
 
-    // --- CLASSE INTERNA PER LO SFONDO ---
     private class BackgroundPanel extends JPanel {
         private Image backgroundImage;
         public BackgroundPanel(String resourcePath) {
-            try {
-                backgroundImage = new ImageIcon(getClass().getResource(resourcePath)).getImage();
-            } catch (Exception e) {
-                System.err.println("Errore caricamento sfondo: " + e.getMessage());
-            }
+            try { backgroundImage = new ImageIcon(getClass().getResource(resourcePath)).getImage(); } 
+            catch (Exception e) { System.err.println("Errore: " + e.getMessage()); }
         }
         @Override
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
-            if (backgroundImage != null) {
-                g.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
-            }
+            if (backgroundImage != null) g.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
         }
     }
 }

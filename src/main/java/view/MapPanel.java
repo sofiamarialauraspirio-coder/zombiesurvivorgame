@@ -14,7 +14,6 @@ import java.io.File;
 import java.awt.Point;
 import java.util.List;
 import java.util.ArrayList;
-
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 
@@ -37,48 +36,12 @@ public class MapPanel extends JPanel {
     private final int SOURCE_TILE_SIZE = 64;
     private final int DEST_TILE_SIZE = 48;
 
-    private javax.swing.JButton btnMenu;
-    private javax.swing.JButton btnQuit;
+    // Aggiunto per comunicare con l'HUD laterale
+    private Runnable onStateChanged;
 
     public MapPanel(GameMap map) {
         this.map = map;
         this.setLayout(null); 
-
-        btnMenu = new javax.swing.JButton("Main Menu");
-        btnQuit = new javax.swing.JButton("Quit");
-
-        java.awt.Font fontBottoni = new java.awt.Font("Arial", java.awt.Font.BOLD, 18);
-        btnMenu.setFont(fontBottoni);
-        btnMenu.setBackground(new Color(50, 50, 50));
-        btnMenu.setForeground(Color.WHITE);
-        btnMenu.setFocusPainted(false);
-
-        btnQuit.setFont(fontBottoni);
-        btnQuit.setBackground(new Color(50, 50, 50));
-        btnQuit.setForeground(Color.WHITE);
-        btnQuit.setFocusPainted(false);
-
-        btnMenu.setVisible(false);
-        btnQuit.setVisible(false);
-
-        btnQuit.addActionListener(e -> System.exit(0));
-
-        btnMenu.addActionListener(e -> {
-            if (turnController != null) turnController.resetGame();
-            java.awt.Window window = javax.swing.SwingUtilities.getWindowAncestor(MapPanel.this);
-            if (window instanceof javax.swing.JFrame) {
-                javax.swing.JFrame frame = (javax.swing.JFrame) window;
-                frame.setContentPane(new view.MainMenu(frame, new model.GameSession()));
-                frame.setSize(800, 500); 
-                frame.setLocationRelativeTo(null); 
-                frame.revalidate();
-                frame.repaint();
-            }
-        });
-
-        this.add(btnMenu);
-        this.add(btnQuit);
-
         caricaTileset();
         setPreferredSize(new Dimension(map.getCols() * DEST_TILE_SIZE, map.getRows() * DEST_TILE_SIZE));
 
@@ -93,7 +56,6 @@ public class MapPanel extends JPanel {
                 if (state != GameState.P1_CHOICE && state != GameState.P2_CHOICE) return;
 
                 int keyCode = e.getKeyCode();
-
                 boolean survivorTurn = turnController.isSurvivorTurn();
                 model.Entity activeEntity = survivorTurn ? map.getSurvivor() : map.getZombie();
                 model.Entity oppEntity = survivorTurn ? map.getZombie() : map.getSurvivor();
@@ -102,34 +64,15 @@ public class MapPanel extends JPanel {
                 Point oppPos = new Point(oppEntity.getX(), oppEntity.getY());
 
                 Point centerRef = isChoosingBlock ? oppPos : activePos;
-                
                 Point basePos = (cursorPosition != null) ? cursorPosition : centerRef;
                 Point target = new Point(basePos);
 
-                if (keyCode == KeyEvent.VK_UP) {
-                    target.x = centerRef.x; 
-                    target.y = basePos.y - 1;
-                    if (target.y == centerRef.y) target.y -= 1; 
-                }
-                else if (keyCode == KeyEvent.VK_DOWN) {
-                    target.x = centerRef.x;
-                    target.y = basePos.y + 1;
-                    if (target.y == centerRef.y) target.y += 1; 
-                }
-                else if (keyCode == KeyEvent.VK_LEFT) {
-                    target.y = centerRef.y;
-                    target.x = basePos.x - 1;
-                    if (target.x == centerRef.x) target.x -= 1; 
-                }
-                else if (keyCode == KeyEvent.VK_RIGHT) {
-                    target.y = centerRef.y;
-                    target.x = basePos.x + 1;
-                    if (target.x == centerRef.x) target.x += 1; 
-                }
+                if (keyCode == KeyEvent.VK_UP) { target.y = basePos.y - 1; target.x = centerRef.x; if (target.y == centerRef.y) target.y -= 1; }
+                else if (keyCode == KeyEvent.VK_DOWN) { target.y = basePos.y + 1; target.x = centerRef.x; if (target.y == centerRef.y) target.y += 1; }
+                else if (keyCode == KeyEvent.VK_LEFT) { target.x = basePos.x - 1; target.y = centerRef.y; if (target.x == centerRef.x) target.x -= 1; }
+                else if (keyCode == KeyEvent.VK_RIGHT) { target.x = basePos.x + 1; target.y = centerRef.y; if (target.x == centerRef.x) target.x += 1; }
 
-                if (keyCode == KeyEvent.VK_UP || keyCode == KeyEvent.VK_DOWN || 
-                    keyCode == KeyEvent.VK_LEFT || keyCode == KeyEvent.VK_RIGHT) {
-                    
+                if (keyCode == KeyEvent.VK_UP || keyCode == KeyEvent.VK_DOWN || keyCode == KeyEvent.VK_LEFT || keyCode == KeyEvent.VK_RIGHT) {
                     boolean isCenter = target.equals(centerRef);
                     boolean isValidMove = !isChoosingBlock && validMoves != null && validMoves.contains(target);
                     boolean isValidBlock = isChoosingBlock && validBlocks != null && validBlocks.contains(target);
@@ -140,20 +83,15 @@ public class MapPanel extends JPanel {
                 } 
                 else if (keyCode == KeyEvent.VK_ENTER) {
                     if (!isChoosingBlock && cursorPosition != null && validMoves != null && validMoves.contains(cursorPosition)) {
-                        
                         int targetX = cursorPosition.x;
                         int targetY = cursorPosition.y;
                         int blocchiDisponibili = activeEntity.getNumeroBlocchiPossibili();
-
                         boolean oppIsFrozen = !oppEntity.canMove();
                         
                         validMoves.clear(); 
                         cursorPosition = null; 
-                        
                         turnController.confirmMove(targetX, targetY);
 
-
-                        
                        if (blocchiDisponibili > 0 && !oppIsFrozen) {
                             isChoosingBlock = true;
                             calcolaCaselleBlocco(); 
@@ -162,7 +100,6 @@ public class MapPanel extends JPanel {
                     else if (isChoosingBlock && cursorPosition != null && validBlocks != null && validBlocks.contains(cursorPosition)) {
                         Point bloccoPiazzato = new Point(cursorPosition.x, cursorPosition.y);
                         boolean finished = turnController.confirmBlock(bloccoPiazzato.x, bloccoPiazzato.y);
-                        
                         validBlocks.remove(bloccoPiazzato); 
                         
                         if (finished || validBlocks.isEmpty()) {
@@ -176,16 +113,19 @@ public class MapPanel extends JPanel {
                     }
                 }
                 repaint();
+                // 🔔 Avvisa l'HUD laterale di aggiornarsi
+                if (onStateChanged != null) onStateChanged.run(); 
             }
         });
     } 
 
+    public void setOnStateChanged(Runnable callback) { this.onStateChanged = callback; }
+    public boolean isChoosingBlock() { return isChoosingBlock; }
+
     private void calcolaCaselleBlocco() {
         validBlocks.clear();
         boolean survivorTurn = turnController.isSurvivorTurn();
-        Point bersaglio = survivorTurn ? new Point(map.getZombie().getX(), map.getZombie().getY()) 
-                                       : new Point(map.getSurvivor().getX(), map.getSurvivor().getY());
-
+        Point bersaglio = survivorTurn ? new Point(map.getZombie().getX(), map.getZombie().getY()) : new Point(map.getSurvivor().getX(), map.getSurvivor().getY());
         if (map.isWalkable(bersaglio.y - 1, bersaglio.x)) validBlocks.add(new Point(bersaglio.x, bersaglio.y - 1));
         if (map.isWalkable(bersaglio.y + 1, bersaglio.x)) validBlocks.add(new Point(bersaglio.x, bersaglio.y + 1));
         if (map.isWalkable(bersaglio.y, bersaglio.x - 1)) validBlocks.add(new Point(bersaglio.x - 1, bersaglio.y));
@@ -210,6 +150,7 @@ public class MapPanel extends JPanel {
         isChoosingBlock = false; 
         cursorPosition = null;
         repaint();
+        if (onStateChanged != null) onStateChanged.run();
     }
 
     public void setValidMoves(List<Point> moves) {
@@ -235,8 +176,7 @@ public class MapPanel extends JPanel {
                     int sy = (actualId / colsInTileset) * SOURCE_TILE_SIZE;
                     int dx = col * DEST_TILE_SIZE;
                     int dy = row * DEST_TILE_SIZE;
-                    g.drawImage(tileset, dx, dy, dx + DEST_TILE_SIZE, dy + DEST_TILE_SIZE, 
-                                         sx, sy, sx + SOURCE_TILE_SIZE, sy + SOURCE_TILE_SIZE, null);
+                    g.drawImage(tileset, dx, dy, dx + DEST_TILE_SIZE, dy + DEST_TILE_SIZE, sx, sy, sx + SOURCE_TILE_SIZE, sy + SOURCE_TILE_SIZE, null);
                 }
             }
         }
@@ -245,181 +185,68 @@ public class MapPanel extends JPanel {
             for (model.Crate cassa : map.getCrates()) {
                 int drawX = cassa.getX() * DEST_TILE_SIZE;
                 int drawY = cassa.getY() * DEST_TILE_SIZE;
-                
-                if (crateImage != null) {
-                    g.drawImage(crateImage, drawX, drawY, DEST_TILE_SIZE, DEST_TILE_SIZE, null);
-                } else {
-                    g.setColor(new Color(205, 133, 63)); 
-                    g.fillRect(drawX, drawY, DEST_TILE_SIZE, DEST_TILE_SIZE);
-                }
+                if (crateImage != null) g.drawImage(crateImage, drawX, drawY, DEST_TILE_SIZE, DEST_TILE_SIZE, null);
             }
         }
 
         boolean canShowIndicators = true; 
         if (turnController != null) {
             GameState state = turnController.getCurrentState();
-            if (state == GameState.MENU || state == GameState.RESOLUTION || state == GameState.END_GAME || state == GameState.ZOMBIE_VICTORY) {
-                canShowIndicators = false;
-            }
+            if (state == GameState.MENU || state == GameState.RESOLUTION || state == GameState.END_GAME || state == GameState.ZOMBIE_VICTORY) canShowIndicators = false;
         }
 
         if (canShowIndicators && !isChoosingBlock && validMoves != null) {
-            Color gialloTrasparente = new Color(255, 255, 0, 150);
             for (Point p : validMoves) {
-                int drawX = p.x * DEST_TILE_SIZE;
-                int drawY = p.y * DEST_TILE_SIZE;
-                g.setColor(gialloTrasparente);
-                g.fillRect(drawX, drawY, DEST_TILE_SIZE, DEST_TILE_SIZE);
+                g.setColor(new Color(255, 255, 0, 150));
+                g.fillRect(p.x * DEST_TILE_SIZE, p.y * DEST_TILE_SIZE, DEST_TILE_SIZE, DEST_TILE_SIZE);
                 g.setColor(Color.YELLOW);
-                g.drawRect(drawX, drawY, DEST_TILE_SIZE, DEST_TILE_SIZE);
+                g.drawRect(p.x * DEST_TILE_SIZE, p.y * DEST_TILE_SIZE, DEST_TILE_SIZE, DEST_TILE_SIZE);
             }
         }
 
         if (canShowIndicators && isChoosingBlock && validBlocks != null) {
-            Color rossoTrasparente = new Color(255, 0, 0, 150);
             for (Point p : validBlocks) {
-                int drawX = p.x * DEST_TILE_SIZE;
-                int drawY = p.y * DEST_TILE_SIZE;
-                g.setColor(rossoTrasparente);
-                g.fillRect(drawX, drawY, DEST_TILE_SIZE, DEST_TILE_SIZE);
+                g.setColor(new Color(255, 0, 0, 150));
+                g.fillRect(p.x * DEST_TILE_SIZE, p.y * DEST_TILE_SIZE, DEST_TILE_SIZE, DEST_TILE_SIZE);
                 g.setColor(Color.RED);
-                g.drawRect(drawX, drawY, DEST_TILE_SIZE, DEST_TILE_SIZE);
+                g.drawRect(p.x * DEST_TILE_SIZE, p.y * DEST_TILE_SIZE, DEST_TILE_SIZE, DEST_TILE_SIZE);
             }
         }
 
-        // =========================================================
-        // 🚀 MAGIA: Muri grigi disegnati SOLO se hai il bonus Double Block (== 2) !
-        // =========================================================
         Color grigioTrasparente = new Color(100, 100, 100, 200);
-        
         if (map.getSurvivor() != null && map.getSurvivor().getPlannedBlocks() != null && map.getSurvivor().getNumeroBlocchiPossibili() == 2) {
             for (Point p : map.getSurvivor().getPlannedBlocks()) {
-                int drawX = p.x * DEST_TILE_SIZE;
-                int drawY = p.y * DEST_TILE_SIZE;
-                g.setColor(grigioTrasparente);
-                g.fillRect(drawX, drawY, DEST_TILE_SIZE, DEST_TILE_SIZE);
-                g.setColor(Color.WHITE);
-                g.drawRect(drawX, drawY, DEST_TILE_SIZE, DEST_TILE_SIZE);
+                g.setColor(grigioTrasparente); g.fillRect(p.x * DEST_TILE_SIZE, p.y * DEST_TILE_SIZE, DEST_TILE_SIZE, DEST_TILE_SIZE);
+                g.setColor(Color.WHITE); g.drawRect(p.x * DEST_TILE_SIZE, p.y * DEST_TILE_SIZE, DEST_TILE_SIZE, DEST_TILE_SIZE);
             }
         }
-        
         if (map.getZombie() != null && map.getZombie().getPlannedBlocks() != null && map.getZombie().getNumeroBlocchiPossibili() == 2) {
             for (Point p : map.getZombie().getPlannedBlocks()) {
-                int drawX = p.x * DEST_TILE_SIZE;
-                int drawY = p.y * DEST_TILE_SIZE;
-                g.setColor(grigioTrasparente);
-                g.fillRect(drawX, drawY, DEST_TILE_SIZE, DEST_TILE_SIZE);
-                g.setColor(Color.WHITE);
-                g.drawRect(drawX, drawY, DEST_TILE_SIZE, DEST_TILE_SIZE);
+                g.setColor(grigioTrasparente); g.fillRect(p.x * DEST_TILE_SIZE, p.y * DEST_TILE_SIZE, DEST_TILE_SIZE, DEST_TILE_SIZE);
+                g.setColor(Color.WHITE); g.drawRect(p.x * DEST_TILE_SIZE, p.y * DEST_TILE_SIZE, DEST_TILE_SIZE, DEST_TILE_SIZE);
             }
         }
 
-        if (map.getKey() != null && keyImage != null) {
-            int scaledX = (map.getKey().getX() * DEST_TILE_SIZE) / SOURCE_TILE_SIZE;
-            int scaledY = (map.getKey().getY() * DEST_TILE_SIZE) / SOURCE_TILE_SIZE;
-            g.drawImage(keyImage, scaledX - 16, scaledY - 16, 32, 32, null);
-        }
-        if (map != null && map.getDoor() != null) {
-            int dx = map.getDoor().getGridColLeft() * DEST_TILE_SIZE;
-            int dy = map.getDoor().getGridRow() * DEST_TILE_SIZE;
-            g.setColor(new Color(139, 69, 19)); 
-            g.fillRect(dx, dy, DEST_TILE_SIZE * 2, DEST_TILE_SIZE);
-        }
-        
-        if (turnController != null && turnController.getCurrentState() == GameState.ZOMBIE_VICTORY) {
-            int collisionX = map.getZombie().getX() * DEST_TILE_SIZE;
-            int collisionY = map.getZombie().getY() * DEST_TILE_SIZE;
-            g.setColor(new Color(150, 0, 0, 200)); 
-            g.fillRect(collisionX, collisionY, DEST_TILE_SIZE, DEST_TILE_SIZE);
-        }
-
-        if (map.getZombie() != null && zombieImage != null) {
-            g.drawImage(zombieImage, map.getZombie().getX() * DEST_TILE_SIZE, map.getZombie().getY() * DEST_TILE_SIZE, DEST_TILE_SIZE, DEST_TILE_SIZE, null);
-        }
-        if (map.getSurvivor() != null && survivorImage != null) {
-            g.drawImage(survivorImage, map.getSurvivor().getX() * DEST_TILE_SIZE, map.getSurvivor().getY() * DEST_TILE_SIZE, DEST_TILE_SIZE, DEST_TILE_SIZE, null);
-        }
+        if (map.getKey() != null && keyImage != null) g.drawImage(keyImage, ((map.getKey().getX() * DEST_TILE_SIZE) / SOURCE_TILE_SIZE) - 16, ((map.getKey().getY() * DEST_TILE_SIZE) / SOURCE_TILE_SIZE) - 16, 32, 32, null);
+        if (map != null && map.getDoor() != null) { g.setColor(new Color(139, 69, 19)); g.fillRect(map.getDoor().getGridColLeft() * DEST_TILE_SIZE, map.getDoor().getGridRow() * DEST_TILE_SIZE, DEST_TILE_SIZE * 2, DEST_TILE_SIZE); }
+        if (turnController != null && turnController.getCurrentState() == GameState.ZOMBIE_VICTORY) { g.setColor(new Color(150, 0, 0, 200)); g.fillRect(map.getZombie().getX() * DEST_TILE_SIZE, map.getZombie().getY() * DEST_TILE_SIZE, DEST_TILE_SIZE, DEST_TILE_SIZE); }
+        if (map.getZombie() != null && zombieImage != null) g.drawImage(zombieImage, map.getZombie().getX() * DEST_TILE_SIZE, map.getZombie().getY() * DEST_TILE_SIZE, DEST_TILE_SIZE, DEST_TILE_SIZE, null);
+        if (map.getSurvivor() != null && survivorImage != null) g.drawImage(survivorImage, map.getSurvivor().getX() * DEST_TILE_SIZE, map.getSurvivor().getY() * DEST_TILE_SIZE, DEST_TILE_SIZE, DEST_TILE_SIZE, null);
 
         if (canShowIndicators && cursorPosition != null && turnController != null) {
             boolean survivorTurn = turnController.isSurvivorTurn();
-            Point centerRef = isChoosingBlock ? 
-                (survivorTurn ? new Point(map.getZombie().getX(), map.getZombie().getY()) : new Point(map.getSurvivor().getX(), map.getSurvivor().getY())) : 
-                (survivorTurn ? new Point(map.getSurvivor().getX(), map.getSurvivor().getY()) : new Point(map.getZombie().getX(), map.getZombie().getY()));
-
+            Point centerRef = isChoosingBlock ? (survivorTurn ? new Point(map.getZombie().getX(), map.getZombie().getY()) : new Point(map.getSurvivor().getX(), map.getSurvivor().getY())) : (survivorTurn ? new Point(map.getSurvivor().getX(), map.getSurvivor().getY()) : new Point(map.getZombie().getX(), map.getZombie().getY()));
             if (!cursorPosition.equals(centerRef)) {
-                int cursorDrawX = cursorPosition.x * DEST_TILE_SIZE;
-                int cursorDrawY = cursorPosition.y * DEST_TILE_SIZE;
-                
                 g.setColor(Color.CYAN); 
-                g.drawRect(cursorDrawX, cursorDrawY, DEST_TILE_SIZE, DEST_TILE_SIZE);
-                g.drawRect(cursorDrawX + 1, cursorDrawY + 1, DEST_TILE_SIZE - 2, DEST_TILE_SIZE - 2); 
+                g.drawRect(cursorPosition.x * DEST_TILE_SIZE, cursorPosition.y * DEST_TILE_SIZE, DEST_TILE_SIZE, DEST_TILE_SIZE);
+                g.drawRect((cursorPosition.x * DEST_TILE_SIZE) + 1, (cursorPosition.y * DEST_TILE_SIZE) + 1, DEST_TILE_SIZE - 2, DEST_TILE_SIZE - 2); 
             }
         }
         
-        if (turnController != null && turnController.getCurrentState() == GameState.SURVIVOR_VICTORY) {
-            g.setColor(new Color(0, 0, 0, 180));
-            g.fillRect(0, 0, getWidth(), getHeight());
-
-            String messaggio = "IL SOPRAVVISSUTO HA VINTO!";
-            java.awt.Font fontVittoria = new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 36);
-            g.setFont(fontVittoria);
-            
-            java.awt.FontMetrics metrics = g.getFontMetrics(fontVittoria);
-            int xTesto = (getWidth() - metrics.stringWidth(messaggio)) / 2;
-            int yTesto = (getHeight() / 2);
-
-            g.setColor(Color.BLACK);
-            g.drawString(messaggio, xTesto + 3, yTesto + 3);
-            g.setColor(new Color(255, 215, 0)); 
-            g.drawString(messaggio, xTesto, yTesto);
-        }
-        else if (turnController != null && turnController.getCurrentState() == GameState.ZOMBIE_VICTORY) {
-            g.setColor(new Color(100, 0, 0, 190));
-            g.fillRect(0, 0, getWidth(), getHeight());
-
-            String messaggio = "LO ZOMBIE HA VINTO!";
-            java.awt.Font fontVittoria = new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 42);
-            g.setFont(fontVittoria);
-            
-            java.awt.FontMetrics metrics = g.getFontMetrics(fontVittoria);
-            int xTesto = (getWidth() - metrics.stringWidth(messaggio)) / 2;
-            int yTesto = (getHeight() / 2);
-
-            g.setColor(Color.BLACK);
-            g.drawString(messaggio, xTesto + 3, yTesto + 3);
-            g.setColor(Color.WHITE);
-            g.drawString(messaggio, xTesto, yTesto);
-        }
-
-        if (turnController != null && 
-           (turnController.getCurrentState() == GameState.SURVIVOR_VICTORY || 
-            turnController.getCurrentState() == GameState.ZOMBIE_VICTORY)) {
-            
-            if (!btnMenu.isVisible()) {
-                int centerX = getWidth() / 2;
-                int btnY = getHeight() / 2 + 50; 
-                btnMenu.setBounds(centerX - 160, btnY, 140, 40);
-                btnQuit.setBounds(centerX + 20, btnY, 140, 40);
-                btnMenu.setVisible(true);
-                btnQuit.setVisible(true);
-            }
-        } else {
-            if (btnMenu != null && btnMenu.isVisible()) {
-                btnMenu.setVisible(false);
-                btnQuit.setVisible(false);
-            }
-        }
+        // Disegno vittoria rimosso dalla mappa, lo metteremo nell'HUD!
     } 
 
-    public void evidenziaMossePersonaggio(int x, int y, int range) {
-        java.util.List<java.awt.Point> mosse = map.getValidMoves(x, y, range);
-        setValidMoves(mosse);
-    }
-    public void evidenziaMossePersonaggio(int x, int y) {
-        evidenziaMossePersonaggio(x, y, 1);
-    }
-
-    public BufferedImage getTileset() {
-        return this.tileset;
-    }
+    public void evidenziaMossePersonaggio(int x, int y, int range) { setValidMoves(map.getValidMoves(x, y, range)); }
+    public void evidenziaMossePersonaggio(int x, int y) { evidenziaMossePersonaggio(x, y, 1); }
+    public BufferedImage getTileset() { return this.tileset; }
 }
