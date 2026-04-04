@@ -56,10 +56,10 @@ public class TurnControllerTest {
         turnController.startGame();
         gameMap.setTile(0, 1, 0); 
 
-        // P1 conferma SOLO la mossa
+        // P1 conferma la mossa
         turnController.confirmMove(1, 0);
 
-        // Il turno NON deve passare a P2 immediatamente perché c'è la trappola da piazzare!
+        // Il turno non deve passare a P2 immediatamente perché c'è la trappola da piazzare
         assertNotNull(survivor.getPlannedMove(), "La mossa deve essere salvata");
         assertEquals(TurnController.GameState.P1_CHOICE, turnController.getCurrentState(), "Il turno deve attendere il piazzamento della trappola!");
         
@@ -72,18 +72,18 @@ public class TurnControllerTest {
     public void testZombieVictoryOnCollision() {
         turnController.startGame();
 
-        // 1. TRUCCO: Teletrasportiamo fisicamente entrambi sulla stessa casella!
+        //Teletrasportiamo fisicamente entrambi sulla stessa casella
         survivor.setX(5);
         survivor.setY(5);
         zombie.setX(5);
         zombie.setY(5);
 
-        // 2. Facciamo fare a entrambi un "passo sul posto" confermando la posizione attuale
+        // Facciamo fare a entrambi un passo sul posto confermando la posizione attuale
         turnController.confirmMove(5, 5);
-        turnController.confirmBlock(5, 6); // P1 piazza trappola casuale
+        turnController.confirmBlock(5, 6); // P1 piazza trappola 
 
         turnController.confirmMove(5, 5);
-        turnController.confirmBlock(6, 5); // P2 piazza trappola casuale
+        turnController.confirmBlock(6, 5); // P2 piazza trappola 
 
         // 3. Ora il TurnController, chiudendo il turno, vedrà che X e Y coincidono perfettamente!
         assertEquals(TurnController.GameState.ZOMBIE_VICTORY, turnController.getCurrentState(), "Lo Zombie deve vincere!");
@@ -126,7 +126,7 @@ public class TurnControllerTest {
         assertFalse(survivor.hasKey());
         assertTrue(gameMap.getCrates().isEmpty());
         
-        // Di base tutti hanno 1 trappola invisibile
+        // Di base tutti hanno 1 trappola 
         assertEquals(1, survivor.getNumeroBlocchiPossibili(), "I blocchi possibili devono resettarsi a 1!"); 
         assertEquals(TurnController.GameState.MENU, turnController.getCurrentState());
     }
