@@ -151,12 +151,19 @@ public class TurnControllerTest {
 
     @Test
     public void testDoubleMovementReset_AfterTurn() {
+        // Arrange
         survivor.setDoubleMoveBonus(true);
         turnController.startGame(); 
         
+        // Act: Il Sopravvissuto si muove e poi DEVE confermare il blocco (o finire la sua fase)
         turnController.confirmMove(3, 2); 
+        turnController.forceFinishBlock(); // Chiude la fase del P1
+        
+        // Lo Zombie si muove e chiude la sua fase
         turnController.confirmMove(10, 9);
-
+        turnController.forceFinishBlock(); // Chiude la fase del P2 e innesca la RESOLUTION
+        
+        // Assert
         assertFalse(survivor.hasDoubleMoveBonus(), "Il bonus di Double Movement deve svanire alla fine del turno!");
     }
 }
