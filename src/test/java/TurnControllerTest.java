@@ -52,31 +52,40 @@ public class TurnControllerTest {
     }
 
     @Test
-    public void testNormalTurnSkipsBlockPhase() {
-        // Avviamo il gioco
+    public void testNormalTurnRequiresBlockPhase() {
         turnController.startGame();
         gameMap.setTile(0, 1, 0); 
 
         // P1 conferma SOLO la mossa
         turnController.confirmMove(1, 0);
 
-        // Il turno DEVE passare a P2 immediatamente perché non ci sono blocchi di base!
+        // Il turno NON deve passare a P2 immediatamente perché c'è la trappola da piazzare!
         assertNotNull(survivor.getPlannedMove(), "La mossa deve essere salvata");
-        assertEquals(TurnController.GameState.P2_CHOICE, turnController.getCurrentState(), "Il turno deve passare automaticamente a P2!");
+        assertEquals(TurnController.GameState.P1_CHOICE, turnController.getCurrentState(), "Il turno deve attendere il piazzamento della trappola!");
+        
+        // Ora piazziamo la trappola
+        turnController.confirmBlock(1, 1);
+        assertEquals(TurnController.GameState.P2_CHOICE, turnController.getCurrentState(), "Ora il turno deve passare a P2!");
     }
 
     @Test
     public void testZombieVictoryOnCollision() {
         turnController.startGame();
-        zombie.setX(3);
-        zombie.setY(2);
 
-        // Sopravvissuto scappa in 2,1 (salta il blocco in automatico)
-        turnController.confirmMove(2, 1);
+        // 1. TRUCCO: Teletrasportiamo fisicamente entrambi sulla stessa casella!
+        survivor.setX(5);
+        survivor.setY(5);
+        zombie.setX(5);
+        zombie.setY(5);
 
-        // Lo Zombie salta addosso in 2,1 
-        turnController.confirmMove(2, 1);
+        // 2. Facciamo fare a entrambi un "passo sul posto" confermando la posizione attuale
+        turnController.confirmMove(5, 5);
+        turnController.confirmBlock(5, 6); // P1 piazza trappola casuale
 
+        turnController.confirmMove(5, 5);
+        turnController.confirmBlock(6, 5); // P2 piazza trappola casuale
+
+        // 3. Ora il TurnController, chiudendo il turno, vedrà che X e Y coincidono perfettamente!
         assertEquals(TurnController.GameState.ZOMBIE_VICTORY, turnController.getCurrentState(), "Lo Zombie deve vincere!");
     }
 
@@ -88,9 +97,13 @@ public class TurnControllerTest {
 
         assertTrue(gameMap.getCrates().contains(crate));
 
-        // Mossa S e Mossa Z (senza blocchi)
+        // Mossa S e Trappola S
         turnController.confirmMove(3, 2);
+        turnController.confirmBlock(3, 3);
+
+        // Mossa Z e Trappola Z
         turnController.confirmMove(10, 9);
+        turnController.confirmBlock(10, 8);
 
         assertFalse(gameMap.getCrates().contains(crate), "La cassa deve essere rimossa dalla mappa!");
     }
@@ -99,7 +112,7 @@ public class TurnControllerTest {
     public void testCleanStateReset() {
         turnController.startGame(); 
         turnController.confirmMove(5, 5);  
-        turnController.confirmMove(6, 6);  
+        turnController.confirmBlock(5, 6);  
         
         survivor.collectKey();
         gameMap.addCrate(new model.Crate(1, 1));
@@ -112,7 +125,9 @@ public class TurnControllerTest {
         assertNull(zombie.getPlannedMove());
         assertFalse(survivor.hasKey());
         assertTrue(gameMap.getCrates().isEmpty());
-        assertEquals(0, survivor.getNumeroBlocchiPossibili(), "I blocchi possibili devono resettarsi a 0!"); 
+        
+        // Di base tutti hanno 1 trappola invisibile
+        assertEquals(1, survivor.getNumeroBlocchiPossibili(), "I blocchi possibili devono resettarsi a 1!"); 
         assertEquals(TurnController.GameState.MENU, turnController.getCurrentState());
     }
 
@@ -121,17 +136,17 @@ public class TurnControllerTest {
         int stopOpponentCount = 0;
         int doubleMovementCount = 0;
         int doubleBlockCount = 0;
-        int selfFreezeCount = 0; // Aggiungiamo il contatore per la Tagliola
-        int numTrials = 400;     // Alziamo a 400 i tentativi
+        int selfFreezeCount = 0; 
+        int numTrials = 400;    
 
         for (int i = 0; i < numTrials; i++) {
             gameMap.getCrates().clear();
             model.Crate crate = new model.Crate(2, 2); 
             gameMap.addCrate(crate);
             survivor.setDoubleMoveBonus(false);
-            survivor.setNumeroBlocchiPossibili(1); // Mettiamo 1 come concordato per la trappola invisibile
+            survivor.setNumeroBlocchiPossibili(1); 
             zombie.setCanMove(true);
-            survivor.setCanMove(true); // Ci assicuriamo che non sia già congelato
+            survivor.setCanMove(true); 
             
             turnController.changeState(TurnController.GameState.P2_CHOICE); 
             turnController.confirmMove(10, 10);
@@ -140,13 +155,13 @@ public class TurnControllerTest {
             if (survivor.hasDoubleMoveBonus()) doubleMovementCount++;
             else if (!zombie.canMove()) stopOpponentCount++;
             else if (survivor.getNumeroBlocchiPossibili() == 2) doubleBlockCount++;
-            else if (!survivor.canMove()) selfFreezeCount++; // Se il Sopravvissuto è congelato, è uscita la Tagliola!
+            else if (!survivor.canMove()) selfFreezeCount++; 
         }
 
         assertTrue(doubleMovementCount > 0, "Double Movement mancante");
         assertTrue(stopOpponentCount > 0, "Stop Opponent mancante");
         assertTrue(doubleBlockCount > 0, "Double Block mancante");
-        assertTrue(selfFreezeCount > 0, "Tagliola (Self-Freeze) mancante"); // Verifica finale
+        assertTrue(selfFreezeCount > 0, "Tagliola (Self-Freeze) mancante"); 
     }
 
     @Test
@@ -154,13 +169,11 @@ public class TurnControllerTest {
         survivor.setDoubleMoveBonus(true);
         turnController.startGame(); 
         
-        // Il Sopravvissuto si muove e poi DEVE confermare il blocco (o finire la sua fase)
         turnController.confirmMove(3, 2); 
-        turnController.forceFinishBlock(); // Chiude la fase del P1
+        turnController.forceFinishBlock(); 
         
-        // Lo Zombie si muove e chiude la sua fase
         turnController.confirmMove(10, 9);
-        turnController.forceFinishBlock(); // Chiude la fase del P2 e innesca la RESOLUTION
+        turnController.forceFinishBlock(); 
         
         assertFalse(survivor.hasDoubleMoveBonus(), "Il bonus di Double Movement deve svanire alla fine del turno!");
     }
