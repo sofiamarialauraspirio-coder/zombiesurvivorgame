@@ -5,7 +5,7 @@ import java.util.List;
 
 public class CrateManager {
     
-    // REQUISITO 1: Strict Capacity (Limite massimo di 2 casse)
+    // Strict Capacity (Limite massimo di 2 casse)
     public static final int MAX_CRATES = 2;
     
     private List<Crate> activeCrates;
@@ -14,7 +14,7 @@ public class CrateManager {
         this.activeCrates = new ArrayList<>();
     }
 
-    // REQUISITO 2 e 3: Pre-Generation Validation & Generation Bypass
+    // Pre-Generation Validation & Generation Bypass
     public boolean spawnCrate(int x, int y) {
         // Controllo: se abbiamo già 2 casse, blocca tutto e restituisci 'false'
         if (activeCrates.size() >= MAX_CRATES) {
@@ -34,7 +34,7 @@ public class CrateManager {
         return activeCrates;
     }
 
-    // REQUISITO 5: Dynamic Reset (Quando un giocatore la raccoglie)
+    // Dynamic Reset (Quando un giocatore la raccoglie)
     public void removeCrate(Crate crate) {
         activeCrates.remove(crate);
         System.out.println("Cassa raccolta! Spazio liberato per un nuovo spawn.");

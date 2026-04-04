@@ -9,7 +9,7 @@ public class Survivor extends Entity {
         super(startX, startY);
     }
 
-    // Metodi specifici del Sopravvissuto (Story della Chiave e Porta)
+    // Metodi specifici del Sopravvissuto
     public boolean hasKey() { 
         return hasKey; 
     }

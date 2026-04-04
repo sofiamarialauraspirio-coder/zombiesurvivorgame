@@ -7,11 +7,10 @@ public class EntitySpawnTest {
 
     @Test
     public void testCharacterSpawnsCorrectlyFromMap() {
-        // 1. Carichiamo la mappa
         MapLoader loader = new MapLoader();
         GameMap map = loader.loadMap("src/main/resources/mappa_livello1.json");
 
-        // 2. Testiamo lo ZOMBIE
+        // Testiamo lo ZOMBIE
         // Verifichiamo prima che lo zombie esista (che non sia null)
         assertNotNull(map.getZombie(), "Errore: Lo Zombie non è stato creato dal MapLoader!");
         
@@ -19,7 +18,7 @@ public class EntitySpawnTest {
         assertEquals(9, map.getZombie().getX(), "La X dello Zombie non coincide con Tiled!");
         assertEquals(8, map.getZombie().getY(), "La Y dello Zombie non coincide con Tiled!");
 
-        // 3. Testiamo il SOPRAVVISSUTO
+        // Testiamo il SOPRAVVISSUTO
         // Verifichiamo prima che il sopravvissuto esista
         assertNotNull(map.getSurvivor(), "Errore: Il Sopravvissuto non è stato creato dal MapLoader!");
         

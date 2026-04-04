@@ -10,7 +10,6 @@ public class BackgroundPanel extends JPanel {
     // Costruttore che accetta il percorso della risorsa Maven
     public BackgroundPanel(String resourcePath) {
         try {
-            // MAVEN STYLE: Usiamo getResource partendo con '/'
             backgroundImage = ImageIO.read(getClass().getResource(resourcePath));
         } catch (Exception e) {
             System.err.println("Errore nel caricamento dello sfondo: " + resourcePath);

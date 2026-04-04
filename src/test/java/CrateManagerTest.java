@@ -16,21 +16,21 @@ public class CrateManagerTest {
 
     @Test
     public void testMaxCratesLimit() {
-        // Arrange: Forziamo lo spawn di 2 casse
+        // Forziamo lo spawn di 2 casse
         crateManager.spawnCrate(0, 0); // Cassa 1
         crateManager.spawnCrate(1, 1); // Cassa 2
 
-        // Act: Tentiamo di spawnare una TERZA cassa
+        // Tentiamo di spawnare una TERZA cassa
         boolean isThirdSpawned = crateManager.spawnCrate(2, 2);
 
-        // Assert: Verifichiamo che la terza NON sia spawnata e il limite sia rimasto 2
+        // Verifichiamo che la terza NON sia spawnata e il limite sia rimasto 2
         assertFalse(isThirdSpawned, "La terza cassa NON dovrebbe spawnare!");
         assertEquals(2, crateManager.getActiveCrates().size(), "Ci devono essere esattamente 2 casse attive!");
     }
     
     @Test
     public void testDynamicReset() {
-        // Arrange: Riempiamo la mappa con 2 casse
+        // Riempiamo la mappa con 2 casse
         crateManager.spawnCrate(0, 0);
         crateManager.spawnCrate(1, 1);
         
@@ -38,10 +38,10 @@ public class CrateManagerTest {
         Crate collectedCrate = crateManager.getActiveCrates().get(0);
         crateManager.removeCrate(collectedCrate);
         
-        // Act: Ora tentiamo di spawnare di nuovo
+        // Ora tentiamo di spawnare di nuovo
         boolean isRespawned = crateManager.spawnCrate(3, 3);
         
-        // Assert: Questa volta deve funzionare perché abbiamo liberato uno slot!
+        // Questa volta deve funzionare perché abbiamo liberato uno slot!
         assertTrue(isRespawned, "La cassa DEVE spawnare perché uno slot si è liberato!");
         assertEquals(2, crateManager.getActiveCrates().size(), "Il numero totale deve essere tornato a 2.");
     }

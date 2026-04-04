@@ -108,7 +108,7 @@ public class TurnController {
             (survivorIsP1 ? gameManager.getSurvivor() : gameManager.getZombie()) : 
             (survivorIsP1 ? gameManager.getZombie() : gameManager.getSurvivor());
 
-        // 🔴 Recuperiamo anche l'avversario per sapere se è congelato
+        // Recuperiamo anche l'avversario per sapere se è congelato
         Entity opponent = (currentState == GameState.P1_CHOICE) ? 
             (survivorIsP1 ? gameManager.getZombie() : gameManager.getSurvivor()) : 
             (survivorIsP1 ? gameManager.getSurvivor() : gameManager.getZombie());
@@ -117,12 +117,12 @@ public class TurnController {
 
         if (currentState == GameState.P1_CHOICE) {
             p1HasMoved = true;
-            // 🚀 SALTO AUTOMATICO: Se l'avversario è congelato, la fase di blocco si autocompleta!
+            // SALTO AUTOMATICO: Se l'avversario è congelato, la fase di blocco si autocompleta!
             if (!opponent.canMove()) p1HasBlocked = true; 
             checkP1Finished();
         } else if (currentState == GameState.P2_CHOICE) {
             p2HasMoved = true;
-            // 🚀 SALTO AUTOMATICO: Se l'avversario è congelato, la fase di blocco si autocompleta!
+            // SALTO AUTOMATICO: Se l'avversario è congelato, la fase di blocco si autocompleta!
             if (!opponent.canMove()) p2HasBlocked = true;
             checkP2Finished();
         }
@@ -183,7 +183,7 @@ public class TurnController {
         gameMap.getSurvivor().setDoubleMoveBonus(false); 
         gameMap.getZombie().setDoubleMoveBonus(false);   
         
-        // 🧱 TUTTO A UNO A FINE TURNO! (Trappola Invisibile)
+        // TUTTO A UNO A FINE TURNO! (Trappola Invisibile)
         gameManager.getSurvivor().setNumeroBlocchiPossibili(1);
         gameManager.getZombie().setNumeroBlocchiPossibili(1);
         gameMap.getSurvivor().setNumeroBlocchiPossibili(1);
@@ -216,7 +216,7 @@ public class TurnController {
                     mostraPopupBonus("STOP OPPONENT!", "L'avversario (" + frozen + ") è <b>congelato</b> per un turno.", "/freeze_bonus.png", new Color(0, 200, 255), picker); 
                 }
                 else if (roll == 3) {
-                    // 🎉 Assegna 2 blocchi. Il MapPanel leggerà questo "2" e disegnerà i muri veri!
+                    // Assegna 2 blocchi. Il MapPanel leggerà questo "2" e disegnerà i muri veri!
                     if (sSuC) { gameManager.getSurvivor().setNumeroBlocchiPossibili(2); gameMap.getSurvivor().setNumeroBlocchiPossibili(2); }
                     if (zSuC) { gameManager.getZombie().setNumeroBlocchiPossibili(2); gameMap.getZombie().setNumeroBlocchiPossibili(2); }
                     mostraPopupBonus("DOUBLE BLOCK!", "Puoi posizionare <b>2 blocchi</b> in questo turno.", "/doppioblocco.png", new Color(100, 255, 100), picker); 

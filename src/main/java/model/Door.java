@@ -7,7 +7,7 @@ public class Door {
     private int gridColRight;
     private int gridRow;
     
-    // NUOVA VARIABILE: La porta nasce chiusa!
+    // La porta nasce chiusa!
     private boolean open = false;
 
     public Door(int x, int y, int gridColLeft, int gridColRight, int gridRow) {
