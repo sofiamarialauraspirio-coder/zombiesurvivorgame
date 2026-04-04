@@ -62,6 +62,7 @@ public abstract class Entity {
     public void resetMoveStatus() { 
         this.canMove = true; 
         this.numeroBlocchiPossibili = 1; // Si resetta a 1 blocco normale
+        this.doubleMoveBonus = false;
     }
 
     public boolean hasDoubleMoveBonus() { return doubleMoveBonus; }
