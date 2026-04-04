@@ -23,10 +23,10 @@ public class CrateSpawnTest {
 
     @Test
     public void testCrateSpawnsOnWalkableCell() {
-        // Act: Forziamo la generazione di una cassa
+        // Forziamo la generazione di una cassa
         map.spawnRandomCrate();
 
-        // Assert: Verifichiamo che sia apparsa e che sia su una cella valida
+        // Verifichiamo che sia apparsa e che sia su una cella valida
         assertFalse(map.getCrates().isEmpty(), "Dovrebbe essere spawnata una cassa.");
         Crate spawnedCrate = map.getCrates().get(0);
 
@@ -36,16 +36,16 @@ public class CrateSpawnTest {
 
     @Test
     public void testCollisionAvoidance() {
-        // Arrange: Prendiamo le coordinate attuali del Sopravvissuto
+        // Prendiamo le coordinate attuali del Sopravvissuto
         int sx = map.getSurvivor().getX();
         int sy = map.getSurvivor().getY();
 
-        // Act: Generiamo 100 casse (ignorando temporaneamente il limite di 2 per testare la statistica)
+        // Generiamo 100 casse (ignorando temporaneamente il limite di 2 per testare la statistica)
         for (int i = 0; i < 100; i++) {
             map.spawnRandomCrate();
         }
 
-        // Assert: Nessuna di queste 100 casse deve essere finita addosso al Sopravvissuto
+        // Nessuna di queste 100 casse deve essere finita addosso al Sopravvissuto
         for (Crate c : map.getCrates()) {
             boolean isOnSurvivor = (c.getX() == sx && c.getY() == sy);
             assertFalse(isOnSurvivor, "CRITICO: Una cassa è spawnata esattamente sopra il Sopravvissuto!");

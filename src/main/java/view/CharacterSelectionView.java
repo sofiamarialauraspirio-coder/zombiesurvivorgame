@@ -89,13 +89,9 @@ public class CharacterSelectionView extends JPanel {
         btnOk.addActionListener(e -> {
             dialog.dispose(); // Chiudi il popup
 
-            // =========================================================
-            // 🚀 IL COLLEGAMENTO MAGICO ALLA PLANCIA (GameFrame)
-            // Invece di caricare solo la mappa, carichiamo lo schermo diviso!
-            // =========================================================
             GameFrame schermataGioco = new GameFrame(this.session);
-            // Poiché GameFrame è un JFrame (finestra) a sé stante, dobbiamo 
-            // chiudere il vecchio MenuPrincipale e mostrare la nuova finestra
+            // Poiché GameFrame è un JFrame (finestra) a sé stante, 
+            // chiudiamo il vecchio MenuPrincipale e mostriamo la nuova finestra
             finestraPrincipale.dispose(); 
             schermataGioco.setVisible(true);
 
@@ -105,7 +101,7 @@ public class CharacterSelectionView extends JPanel {
             schermataGioco.getTurnController().setSurvivorIsP1(p1IsSurvivor);
             schermataGioco.getTurnController().startGame();
             
-            // Piccolo trucco: simuliamo un click freccia per mostrare i quadratini subito
+            // Simuliamo un click freccia per mostrare i quadratini subito
             schermataGioco.aggiornaHud();
             schermataGioco.getMapPanel().evidenziaMossePersonaggio(
                 p1IsSurvivor ? schermataGioco.getMap().getSurvivor().getX() : schermataGioco.getMap().getZombie().getX(),

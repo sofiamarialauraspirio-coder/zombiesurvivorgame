@@ -104,8 +104,8 @@ public class MapPanel extends JPanel {
                                 isChoosingBlock = false;
                                 turnController.forceFinishBlock();
                             } else {
-                                // 🎯 FIX UX: Snappiamo il cursore al primo blocco rosso valido!
-                                // Così se il giocatore preme ripetutamente Invio, piazza la trappola senza bloccarsi.
+                                // Snappiamo il cursore al primo blocco rosso valido,
+                                // così se il giocatore preme ripetutamente Invio, piazza la trappola senza bloccarsi.
                                 cursorPosition = new Point(validBlocks.get(0));
                             }
                         }
@@ -153,7 +153,7 @@ public class MapPanel extends JPanel {
             zombieImage = ImageIO.read(new File("src/main/resources/zombie.png"));
             survivorImage = ImageIO.read(new File("src/main/resources/survivor.png"));
             crateImage = ImageIO.read(new File("src/main/resources/crate.png")); 
-            // 🚪 Caricamento immagine porta
+            // Caricamento immagine porta
             File filePorta = new File("src/main/resources/door.png");
             if (filePorta.exists()) {
                 doorImage = ImageIO.read(filePorta);
@@ -212,19 +212,15 @@ public class MapPanel extends JPanel {
             if (state == GameState.MENU || state == GameState.RESOLUTION || state == GameState.END_GAME || state == GameState.ZOMBIE_VICTORY) canShowIndicators = false;
         }
 
-        // =========================================================
-        // ✨ GRAFICA: QUADRATI ARROTONDATI (Più spessi ed eleganti)
-        // =========================================================
         Graphics2D g2 = (Graphics2D) g.create();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON); 
         
-        // 1. Un pizzico più spessi! (3.5 invece di 2.5)
         g2.setStroke(new BasicStroke(3.5f)); 
 
         // 2. Impostazioni del quadrato
         int offset = 6; // Margine interno: staccato dal bordo ma non troppo piccolo
         int size = DEST_TILE_SIZE - (offset * 2); 
-        int arc = 16; // Curvatura degli angoli (più è alto, più è rotondo)
+        int arc = 16; // Curvatura degli angoli 
 
         if (canShowIndicators && !isChoosingBlock && validMoves != null) {
             for (Point p : validMoves) {

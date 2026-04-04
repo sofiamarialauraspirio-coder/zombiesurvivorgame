@@ -25,21 +25,18 @@ public class GameMapTest {
         assertEquals(287, tileInAltoASinistra, "Il tile (0,0) dovrebbe essere un muro 287");
     }
 
-    // ==========================================
-    // TDD REQUIREMENT - Verifica che i muri siano ostacoli
-    // ==========================================
     @Test
     public void testWallIsImpassable() {
         GameMap map = new GameMap();
         
-        // 🧱 FIX: Testiamo il muro con l'ID reale (287) e il pavimento con lo ZERO (0)
+        // Testiamo il muro con l'ID reale (287) e il pavimento con lo ZERO (0)
         map.setTile(5, 5, 287); // Muro
         map.setTile(5, 6, 0);   // Pavimento libero
 
-        // Assert: Il muro (287) NON deve essere calpestabile
+        // Il muro (287) NON deve essere calpestabile
         assertFalse(map.isWalkable(5, 5), "La logica deve registrare il muro 287 come ostacolo invalicabile");
         
-        // Assert: Il pavimento vuoto (0) DEVE essere calpestabile
+        // Il pavimento vuoto (0) DEVE essere calpestabile
         assertTrue(map.isWalkable(5, 6), "La logica deve registrare lo zero come calpestabile");
     }
 }

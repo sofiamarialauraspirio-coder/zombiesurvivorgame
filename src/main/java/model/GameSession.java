@@ -7,9 +7,7 @@ public class GameSession {
     private String player1Role;
     private String player2Role;
 
-    public GameSession() {
-        // Costruttore base
-    }
+    public GameSession() {}
 
     public int tossCoin() {
         Random rand = new Random();
@@ -28,7 +26,6 @@ public class GameSession {
     }
 
     public void assignRole(String chosenRole) {
-        // FIX: Ora controlliamo la parola corretta in italiano passata dai bottoni!
         String otherRole = chosenRole.equals("SURVIVOR") ? "ZOMBIE" : "SURVIVOR";
 
         // Assegniamo i ruoli in base a chi aveva il diritto di scelta

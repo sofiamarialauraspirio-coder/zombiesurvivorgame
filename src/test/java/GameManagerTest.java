@@ -20,14 +20,14 @@ public class GameManagerTest {
 
     @Test
     public void testNormalMovement() {
-        // Arrange: Mosse valide e separate
+        // Mosse valide e separate
         survivor.planMove(0, 1);
         zombie.planMove(5, 4);
 
-        // Act: Risoluzione turno
+        // Risoluzione turno
         gm.resolveGlobalTurn();
 
-        // Assert: Entrambi si sono mossi con successo (Atomic Update)
+        // Entrambi si sono mossi con successo (Atomic Update)
         assertEquals(0, survivor.getX());
         assertEquals(1, survivor.getY());
         assertEquals(5, zombie.getX());
@@ -36,14 +36,13 @@ public class GameManagerTest {
 
     @Test
     public void testCollisionResolution() {
-        // Arrange: Entrambi mirano alla STESSA casella (2,2)
+        // Entrambi mirano alla STESSA casella (2,2)
         survivor.planMove(2, 2);
         zombie.planMove(2, 2);
 
-        // Act
         gm.resolveGlobalTurn();
 
-        // Assert: Collisione! Entrambi devono essere rimasti al punto di partenza
+        // Collisione! Entrambi devono essere rimasti al punto di partenza
         assertEquals(0, survivor.getX(), "Il Sopravvissuto NON doveva muoversi");
         assertEquals(0, survivor.getY());
         assertEquals(5, zombie.getX(), "Lo Zombie NON doveva muoversi");
@@ -52,16 +51,15 @@ public class GameManagerTest {
 
     @Test
     public void testBlockingResolution() {
-        // Arrange: Il Sopravvissuto vuole andare in (0,1)...
+        // Il Sopravvissuto vuole andare in (0,1)...
         survivor.planMove(0, 1);
         // ...ma lo Zombie gli piazza un Blocco proprio lì! (Ora finisce nella Lista dei blocchi)
         zombie.planBlock(0, 1); 
         zombie.planMove(5, 4); // E nel frattempo lo zombie si muove per i fatti suoi
 
-        // Act
         gm.resolveGlobalTurn();
 
-        // Assert: Il Sopravvissuto sbatte contro il blocco e resta fermo. Lo Zombie si muove.
+        // Il Sopravvissuto sbatte contro il blocco e resta fermo. Lo Zombie si muove.
         assertEquals(0, survivor.getX(), "Il Sopravvissuto è bloccato, deve restare in 0,0");
         assertEquals(0, survivor.getY());
         assertEquals(5, zombie.getX(), "Lo Zombie si muove regolarmente");
@@ -70,23 +68,20 @@ public class GameManagerTest {
 
     @Test
     public void testOccupiedCellRule() {
-        // Arrange: Creiamo uno scontro. Entrambi provano ad andare in (2,2)
+        // Creiamo uno scontro. Entrambi provano ad andare in (2,2)
         survivor.planMove(2, 2);
         zombie.planMove(2, 2);
 
         // Il Sopravvissuto prova astutamente a piazzare un blocco sulla casella di PARTENZA dello Zombie (5,5)
         survivor.planBlock(5, 5);
 
-        // Act
         gm.resolveGlobalTurn();
 
-        // Assert: 
-        // 1. A causa della collisione in (2,2), lo Zombie è rimasto fermo in (5,5)
+        // A causa della collisione in (2,2), lo Zombie è rimasto fermo in (5,5)
         assertEquals(5, zombie.getX());
         assertEquals(5, zombie.getY());
         
-        // 2. OCCUPIED CELL RULE: Poiché lo Zombie è ancora in (5,5), il blocco del Sopravvissuto in (5,5) deve sparire!
-        // 🛠️ FIX: Ora usiamo getPlannedBlocks().isEmpty() al posto di assertNull!
+        // Poiché lo Zombie è ancora in (5,5), il blocco del Sopravvissuto in (5,5) deve sparire!
         assertTrue(survivor.getPlannedBlocks().isEmpty(), "Il blocco del Sopravvissuto doveva essere annullato perché lo Zombie occupa la cella!");
     }
 }

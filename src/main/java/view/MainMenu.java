@@ -79,7 +79,7 @@ public class MainMenu extends JPanel {
         btnRegole = new IosGlassButton("Regole");
         btnEsci = new IosGlassButton("Esci");
 
-        // --- Azioni dei Pulsanti ---
+        // Azioni dei Pulsanti
         btnEsci.addActionListener(e -> System.exit(0));
 
         btnGioca.addActionListener(e -> {
@@ -92,7 +92,7 @@ public class MainMenu extends JPanel {
         // Azione per il popup Regole
         btnRegole.addActionListener(e -> mostraPopupRegole(finestraPrincipale));
 
-        // --- Layout dei Pulsanti ---
+        // Layout dei Pulsanti 
         pnlBottoni.add(btnGioca);
         pnlBottoni.add(Box.createHorizontalStrut(15)); 
         pnlBottoni.add(btnRegole); 
@@ -106,9 +106,6 @@ public class MainMenu extends JPanel {
         add(contentPane, BorderLayout.CENTER);
     }
 
-    // ==============================================
-    // 📖 METODO PER IL POPUP DELLE REGOLE
-    // ==============================================
     private void mostraPopupRegole(JFrame parent) {
         JDialog dialog = new JDialog(parent, true); 
         dialog.setUndecorated(true);

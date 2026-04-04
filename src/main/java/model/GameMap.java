@@ -20,21 +20,16 @@ public class GameMap {
     private Zombie zombie;     
     private Survivor survivor;
 
-    // ID del muro basato sul tuo tileset Tiled
+    // ID del muro basato sul tileset Tiled
     public static final int TILE_FLOOR = 1; 
     public static final int TILE_WALL = 287; 
 
     public GameMap() {
         logicalMatrix = new int[rows][cols];
-        // NOTA: Il costruttore è vuoto. 
-        // NON chiamare spawnRandomCrate qui, altrimenti le casse appaiono subito!
     }
 
-    // ==========================================================
-    // STORY 17: SPAWN INTELLIGENTE (Distanza Minima 5 blocchi)
-    // ==========================================================
     public void spawnRandomCrate() {
-        // 1. Controllo limite massimo
+        // Controllo limite massimo
         if (this.crates.size() >= CrateManager.MAX_CRATES) {
             System.out.println("🛑 GameMap: Limite massimo raggiunto. Niente spawn.");
             return;
@@ -43,13 +38,12 @@ public class GameMap {
         Random rand = new Random();
         boolean spawned = false;
         int tentativi = 0;
-        int maxTentativi = 200; // Aumentato a 200 perché ora la regola è molto severa
+        int maxTentativi = 200; 
 
         while (!spawned && tentativi < maxTentativi) {
             int x = rand.nextInt(cols);
             int y = rand.nextInt(rows);
 
-            // --- REQUISITI DI VALIDITÀ ---
             // A. La cella deve essere calpestabile (no muri)
             boolean walkable = isWalkable(y, x);
             
@@ -97,8 +91,7 @@ public class GameMap {
             }
         }
 
-        // 3. 🧱 LA REGOLA DEI MURI DEFINITIVA
-        // In Tiled hai lasciato vuoto (0) dove c'è l'erba verde.
+        // 3. LA REGOLA DEI MURI DEFINITIVA
         // Se il numero è diverso da 0 (es. 9, 287, 365, ecc.), ALLORA È UN MURO!
         if (logicalMatrix[row][col] != 0) {
             return false;
@@ -107,38 +100,35 @@ public class GameMap {
         return true; 
     }
 
-    // ==========================================================
-    // 🧱 NUOVA REGOLA: Controllo per il piazzamento dei blocchi
-    // ==========================================================
     public boolean isBlockable(int row, int col) {
         // 1. Confini e Muri di base: la casella DEVE essere erba vuota (0)
         if (row < 0 || row >= rows || col < 0 || col >= cols) return false;
         if (logicalMatrix[row][col] != 0) return false;
 
-        // 2. 🚫 NO SULLA PORTA
+        // 2. NO SULLA PORTA
         if (door != null) {
             if (row == door.getGridRow() && (col == door.getGridColLeft() || col == door.getGridColRight())) {
                 return false;
             }
         }
 
-        // 3. 🚫 NO SULLA CHIAVE (La chiave è in pixel, dividiamo per 64 per avere la griglia)
+        // 3. NO SULLA CHIAVE (La chiave è in pixel, dividiamo per 64 per avere la griglia)
         if (key != null) {
             int keyGridX = key.getX() / 64;
             int keyGridY = key.getY() / 64;
             if (col == keyGridX && row == keyGridY) return false;
         }
 
-        // 4. 🚫 NO SULLE CASSE MISTERIOSE
+        // 4. NO SULLE CASSE MISTERIOSE
         for (Crate c : crates) {
             if (c.getX() == col && c.getY() == row) return false;
         }
 
-        // 5. 🚫 NO SUI GIOCATORI
+        // 5. NO SUI GIOCATORI
         if (survivor != null && survivor.getX() == col && survivor.getY() == row) return false;
         if (zombie != null && zombie.getX() == col && zombie.getY() == row) return false;
 
-        // Se sopravvive a tutti i controlli... è un ottimo posto per un blocco!
+        // Se sopravvive a tutti i controlli è un ottimo posto per un blocco!
         return true; 
     }
 
@@ -164,7 +154,6 @@ public class GameMap {
         }
     }
 
-    // --- GETTERS E SETTERS ---
     public int getRows() { return rows; }
     public int getCols() { return cols; }
     public Key getKey() { return key; }

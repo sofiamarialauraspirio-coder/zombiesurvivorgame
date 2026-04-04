@@ -22,14 +22,14 @@ public class GameManager {
         boolean cancelSurvivorMove = false;
         boolean cancelZombieMove = false;
 
-        // 2. CONFLICT RESOLUTION (Collision)
+        // CONFLICT RESOLUTION (Collision)
         if (sMove != null && zMove != null && sMove.equals(zMove)) {
             System.out.println("⚔️ SCONTRO FRONTALE! Entrambi saltano sulla stessa casella!");
             cancelSurvivorMove = true; // <--- MANCAVA QUESTO!
             cancelZombieMove = true;   // <--- MANCAVA QUESTO!
         }
 
-        // 3. CONFLICT RESOLUTION (Blocking)
+        // CONFLICT RESOLUTION (Blocking)
         if (sMove != null && zBlocks != null && zBlocks.contains(sMove)) {
             System.out.println("🧱 BLOCCO! Il Sopravvissuto ha sbattuto su un blocco dello Zombie.");
             cancelSurvivorMove = true;
@@ -42,7 +42,7 @@ public class GameManager {
         if (cancelSurvivorMove) survivor.cancelPlannedMove();
         if (cancelZombieMove) zombie.cancelPlannedMove();
 
-        // 4. OCCUPIED CELL RULE
+        // OCCUPIED CELL RULE
         Point sStart = new Point(survivor.getX(), survivor.getY());
         Point zStart = new Point(zombie.getX(), zombie.getY());
 
@@ -58,7 +58,7 @@ public class GameManager {
             survivor.getPlannedBlocks().remove(zStart);
         }
 
-        // 5. ATOMIC UPDATE
+        // ATOMIC UPDATE
         survivor.executePlannedMove();
         zombie.executePlannedMove();
         

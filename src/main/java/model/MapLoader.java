@@ -15,9 +15,6 @@ public class MapLoader {
             JSONObject jsonObject = new JSONObject(content);
             JSONArray layers = jsonObject.getJSONArray("layers");
             
-            // =====================================================================
-            // 🧱 FIX: CARICAMENTO DI TUTTI I LIVELLI (LAYER) DELLA MAPPA
-            // =====================================================================
             for (int i = 0; i < layers.length(); i++) {
                 JSONObject layer = layers.getJSONObject(i);
                 
@@ -33,7 +30,6 @@ public class MapLoader {
                             // Tiled usa 0 per indicare "Nessuna mattonella" (Trasparenza).
                             // Sovrascriviamo la matrice della mappa SOLO se c'è un blocco disegnato!
                             if (rawTileId != 0) {
-                                // Questa magia bitwise rimuove i flag di rotazione/specchiatura di Tiled
                                 int cleanTileId = rawTileId & 0x0FFFFFFF; 
                                 gameMap.setTile(r, c, cleanTileId);
                             }
@@ -44,9 +40,6 @@ public class MapLoader {
             }
             System.out.println("Mappa 12x12 caricata con successo da JSON (Tutti i layer processati)!");
 
-            // =====================================================================
-            // LETTURA DEGLI OGGETTI (CHIAVE, PORTA, ZOMBIE, SOPRAVVISSUTO)
-            // =====================================================================
             for (int i = 0; i < layers.length(); i++) {
                 JSONObject layer = layers.getJSONObject(i);
                 

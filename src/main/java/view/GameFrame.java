@@ -113,9 +113,6 @@ public class GameFrame extends JFrame {
         
         hudPanel.add(Box.createVerticalGlue());
 
-        // =========================================================
-        // ✨ NUOVO PANNELLO: CHECKLIST FASI DEL TURNO
-        // =========================================================
         hudPanel.add(Box.createRigidArea(new Dimension(0, 30))); // Spazio sopra il box
 
         pnlChecklist = new JPanel();
@@ -151,14 +148,10 @@ public class GameFrame extends JFrame {
 
         hudPanel.add(pnlChecklist);
         hudPanel.add(Box.createRigidArea(new Dimension(0, 20)));
-        // =========================================================
 
-        // Questo comando "colla" spinge magicamente tutto verso il FONDO del pannello
+        // Questo comando "colla" spinge tutto verso il FONDO del pannello
         hudPanel.add(Box.createVerticalGlue());
 
-        // =========================================================
-        // ✨ NUOVO MENU DI GIOCO IN BASSO A DESTRA
-        // =========================================================
         JPanel pnlMenuBottom = new JPanel();
         pnlMenuBottom.setLayout(new GridLayout(3, 1, 0, 10)); // 3 righe, 1 colonna, spaziatura 10px tra i tasti
         pnlMenuBottom.setOpaque(false);
@@ -183,7 +176,7 @@ public class GameFrame extends JFrame {
                     
                     this.dispose(); // Chiudi la vecchia finestra
                     
-                    // 1. Creiamo un nuovo GameFrame passandogli la sessione attuale (QUESTO RISOLVE L'ERRORE ROSSO!)
+                    // 1. Creiamo un nuovo GameFrame passandogli la sessione attuale (QUESTO RISOLVE L'ERRORE ROSSO)
                     GameFrame nuovaPartita = new GameFrame(this.session); 
                     nuovaPartita.setVisible(true); 
                     
@@ -239,14 +232,13 @@ public class GameFrame extends JFrame {
             lblNomeGiocatore.setText(isSurvivorTurn ? "SOPRAVVISSUTO" : "ZOMBIE");
             lblNomeGiocatore.setForeground(isSurvivorTurn ? new Color(255, 200, 0) : new Color(180, 50, 255));
 
-            // Indica se devi muoverti o piazzare il blocco con istruzioni precise sui tasti
+            // Indica se ci si deve muovere o piazzare il blocco con istruzioni precise sui tasti
             if (mapPanel.isChoosingBlock()) {
                 lblAzione.setText("<html><center>Usa le <b>FRECCE</b> per scegliere<br>e premi <b>INVIO</b> per piazzare<br>la <font color='#FF5555'>TRAPPOLA (Rosso)</font></center></html>");
             } else {
                 lblAzione.setText("<html><center>Usa le <b>FRECCE</b> per scegliere<br>e premi <b>INVIO</b> per confermare<br>il <font color='#FFFF55'>MOVIMENTO (Giallo)</font></center></html>");
             }
-            // Aggiornamento Logica Checklist Dinamica (Struttura del Turno)
-            // ---------------------------------------------------------
+            
             if (!mapPanel.isChoosingBlock()) {
                 // FASE 1: Movimento
                 lblCheck1.setText("<html><font color='#FFFF55'><b>[►] Fase 1: Movimento</b></font></html>");
@@ -279,9 +271,6 @@ public class GameFrame extends JFrame {
         hudPanel.repaint();
     }
 
-    // =========================================================
-    // 🏆 NUOVO METODO: IL POPUP DI FINE PARTITA
-    // =========================================================
     private void mostraSchermataFinePartita(GameState state) {
         // Usiamo un Timer per aspettare mezzo secondo prima di mostrare il popup, 
         // così il giocatore fa in tempo a vedere l'ultima mossa!
@@ -385,9 +374,6 @@ public class GameFrame extends JFrame {
     public MapPanel getMapPanel() { return mapPanel; }
     public GameMap getMap() { return map; }
 
-    // =========================================================
-    // ✨ NUOVO POP-UP PERSONALIZZATO (Stile Dark/Videogioco)
-    // =========================================================
     private void mostraPopupCustom(String titolo, String messaggio, String testoBtn1, Color coloreBtn1, Runnable azione1, String testoBtn2, Color coloreBtn2, Runnable azione2) {
         JDialog dialog = new JDialog(this, true);
         dialog.setUndecorated(true);

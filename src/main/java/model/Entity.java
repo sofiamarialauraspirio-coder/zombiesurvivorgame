@@ -9,7 +9,7 @@ public abstract class Entity {
     protected int y;
     
     protected Point plannedMove;
-    // 🧱 FIX: Ora usiamo una LISTA per supportare i blocchi multipli!
+    // Ora usiamo una LISTA per supportare i blocchi multipli!
     protected List<Point> plannedBlocks = new ArrayList<>();
     
     protected boolean canMove = true; 
@@ -34,9 +34,6 @@ public abstract class Entity {
     public boolean hasPlannedMove() { return plannedMove != null; } 
     public void cancelPlannedMove() { this.plannedMove = null; }
 
-    // ==========================================
-    // LOGICA BLOCCHI MULTIPLI
-    // ==========================================
     public void planBlock(int targetX, int targetY) {
         this.plannedBlocks.add(new Point(targetX, targetY));
     }
