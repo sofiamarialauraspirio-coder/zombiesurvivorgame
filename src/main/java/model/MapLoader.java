@@ -4,6 +4,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 public class MapLoader {
 
@@ -11,7 +13,20 @@ public class MapLoader {
         GameMap gameMap = new GameMap();
         
         try {
-            String content = new String(Files.readAllBytes(Paths.get(filePath)));
+            // 🚀 FIX AUTOMATICO DEL PERCORSO
+            String resourcePath = filePath;
+            if (resourcePath.startsWith("src/main/resources")) {
+                resourcePath = resourcePath.replace("src/main/resources", "");
+            }
+            if (!resourcePath.startsWith("/")) {
+                resourcePath = "/" + resourcePath;
+            }
+
+            InputStream is = getClass().getResourceAsStream(resourcePath);
+            if (is == null) throw new Exception("File della mappa non trovato: " + resourcePath);
+            
+            String content = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+            
             JSONObject jsonObject = new JSONObject(content);
             JSONArray layers = jsonObject.getJSONArray("layers");
             

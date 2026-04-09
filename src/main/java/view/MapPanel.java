@@ -148,17 +148,22 @@ public class MapPanel extends JPanel {
 
     private void caricaTileset() {
         try {
-            tileset = ImageIO.read(new File("src/main/resources/tilesheet_complete.png"));
-            keyImage = ImageIO.read(new File("src/main/resources/key.png")); 
-            zombieImage = ImageIO.read(new File("src/main/resources/zombie.png"));
-            survivorImage = ImageIO.read(new File("src/main/resources/survivor.png"));
-            crateImage = ImageIO.read(new File("src/main/resources/crate.png")); 
-            // Caricamento immagine porta
-            File filePorta = new File("src/main/resources/door.png");
-            if (filePorta.exists()) {
-                doorImage = ImageIO.read(filePorta);
+            // 🚀 IL METODO DEFINITIVO: Cerca le immagini ovunque si trovino nel progetto!
+            tileset = ImageIO.read(getClass().getResource("/tilesheet_complete.png"));
+            keyImage = ImageIO.read(getClass().getResource("/key.png"));
+            zombieImage = ImageIO.read(getClass().getResource("/zombie.png"));
+            survivorImage = ImageIO.read(getClass().getResource("/survivor.png"));
+            crateImage = ImageIO.read(getClass().getResource("/crate.png"));
+            
+            try {
+                doorImage = ImageIO.read(getClass().getResource("/door.png"));
+            } catch (Exception e) {
+                System.out.println("Immagine porta non trovata, uso fallback colore.");
             }
-        } catch (Exception e) { System.err.println("Errore: " + e.getMessage()); }
+            
+        } catch (Exception e) { 
+            System.err.println("Errore caricamento immagini: " + e.getMessage()); 
+        }
     }
 
     public void clearIndicators() {
