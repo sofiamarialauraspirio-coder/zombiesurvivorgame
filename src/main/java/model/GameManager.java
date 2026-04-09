@@ -22,14 +22,24 @@ public class GameManager {
         boolean cancelSurvivorMove = false;
         boolean cancelZombieMove = false;
 
-        // CONFLICT RESOLUTION (Collision)
+        // Salviamo subito le posizioni di partenza (così non ci sono duplicati!)
+        Point sStart = new Point(survivor.getX(), survivor.getY());
+        Point zStart = new Point(zombie.getX(), zombie.getY());
+
+        // 1. ⚔️ SCONTRO FRONTALE (Saltano sulla stessa casella)
         if (sMove != null && zMove != null && sMove.equals(zMove)) {
-            System.out.println("⚔️ SCONTRO FRONTALE! Entrambi saltano sulla stessa casella!");
-            cancelSurvivorMove = true; // <--- MANCAVA QUESTO!
-            cancelZombieMove = true;   // <--- MANCAVA QUESTO!
+            System.out.println("⚔️ SCONTRO FRONTALE! Lo Zombie ha afferrato il Sopravvissuto!");
+            // Nessuno viene cancellato, atterrano insieme e lo Zombie vince!
         }
 
-        // CONFLICT RESOLUTION (Blocking)
+        // 2. 🔄 INCROCIO FATALE (Provano a scambiarsi di posto)
+        if (sMove != null && zMove != null && sMove.equals(zStart) && zMove.equals(sStart)) {
+            System.out.println("🔄 INCROCIO FATALE! Si sono venuti addosso nei corridoi!");
+            zombie.planMove(zStart.x, zStart.y); // Lo Zombie lo aspetta al varco
+            zMove = zombie.getPlannedMove();     
+        }
+
+        // 3. 🧱 CONFLICT RESOLUTION (Blocking)
         if (sMove != null && zBlocks != null && zBlocks.contains(sMove)) {
             System.out.println("🧱 BLOCCO! Il Sopravvissuto ha sbattuto su un blocco dello Zombie.");
             cancelSurvivorMove = true;
@@ -42,10 +52,7 @@ public class GameManager {
         if (cancelSurvivorMove) survivor.cancelPlannedMove();
         if (cancelZombieMove) zombie.cancelPlannedMove();
 
-        // OCCUPIED CELL RULE
-        Point sStart = new Point(survivor.getX(), survivor.getY());
-        Point zStart = new Point(zombie.getX(), zombie.getY());
-
+        // 4. ❌ OCCUPIED CELL RULE (Regola della cella occupata per i muri)
         boolean sFailedToMove = cancelSurvivorMove || sMove == null;
         boolean zFailedToMove = cancelZombieMove || zMove == null;
 
@@ -58,7 +65,7 @@ public class GameManager {
             survivor.getPlannedBlocks().remove(zStart);
         }
 
-        // ATOMIC UPDATE
+        // 5. 🚀 ATOMIC UPDATE (Esecuzione finale)
         survivor.executePlannedMove();
         zombie.executePlannedMove();
         
